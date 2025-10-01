@@ -1,21 +1,30 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.modelos import Base
 
 class Rutina(Base):
     __tablename__ = "rutinas"
 
     id = Column(Integer, primary_key=True, index=True)
-    id_alumno = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    id_profesor = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    id_ejercicio = Column(Integer, ForeignKey("ejercicios.id"), nullable=False)
-    fecha_asignacion = Column(DateTime, default=datetime.utcnow)
-    series = Column(Integer, nullable=False)
+    alumno_id = Column(Integer, ForeignKey("alumnos.id"))
+    nombre = Column(String, nullable=False)
+
+    alumno = relationship("Alumno", back_populates="rutinas")
+    ejercicios = relationship("RutinaEjercicio", back_populates="rutina")
+    historial = relationship("HistorialRutina", back_populates="rutina")
+
+
+class RutinaEjercicio(Base):
+    __tablename__ = "rutina_ejercicios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rutina_id = Column(Integer, ForeignKey("rutinas.id"))
+    ejercicio_id = Column(Integer, ForeignKey("ejercicios.id"))
     repeticiones = Column(Integer, nullable=False)
     peso = Column(Integer, nullable=True)
 
-    # relaciones
-    alumno = relationship("Usuario", foreign_keys=[id_alumno], back_populates="rutinas_asignadas")
-    profesor = relationship("Usuario", foreign_keys=[id_profesor], back_populates="rutinas_creadas")
-    ejercicio = relationship("Ejercicio", back_populates="rutinas")
+    # Nuevo campo: día de la rutina
+    dia = Column(Integer, nullable=False)  # 1 = Día 1, 2 = Día 2, etc.
+
+    rutina = relationship("Rutina", back_populates="ejercicios")
+    ejercicio = relationship("Ejercicio")

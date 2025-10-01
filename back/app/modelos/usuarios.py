@@ -16,3 +16,4 @@ class Usuario(Base):
     # relaciones
     rutinas_asignadas = relationship("Rutina", back_populates="alumno", foreign_keys="Rutina.id_alumno")
     rutinas_creadas = relationship("Rutina", back_populates="profesor", foreign_keys="Rutina.id_profesor")
+    historial_rutinas = relationship("HistorialRutina", back_populates="alumno")

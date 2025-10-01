@@ -1,20 +1,31 @@
 from pydantic import BaseModel
-from datetime import datetime
+from typing import List, Optional
 
-class RutinaBase(BaseModel):
-    id_alumno: int
-    id_profesor: int
-    id_ejercicio: int
-    series: int
+class RutinaEjercicioBase(BaseModel):
+    ejercicio_id: int
     repeticiones: int
-    peso: int | None = None
+    peso: Optional[int]
+    dia: int  # Día dentro de la rutina
 
-class RutinaCreate(RutinaBase):
+class RutinaEjercicioCreate(RutinaEjercicioBase):
     pass
 
-class RutinaOut(RutinaBase):
+class RutinaEjercicio(RutinaEjercicioBase):
     id: int
-    fecha_asignacion: datetime
-
     class Config:
         orm_mode = True
+
+
+class RutinaBase(BaseModel):
+    nombre: str
+    alumno_id: int
+
+class RutinaCreate(RutinaBase):
+    ejercicios: List[RutinaEjercicioCreate]
+
+class Rutina(RutinaBase):
+    id: int
+    ejercicios: List[RutinaEjercicio]
+    class Config:
+        orm_mode = True
+
