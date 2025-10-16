@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List 
 
 from app.db.engine import get_db
 from app.modelos.historial_rutinas import HistorialRutina

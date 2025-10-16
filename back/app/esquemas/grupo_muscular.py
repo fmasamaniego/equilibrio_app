@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class GrupoMuscularBase(BaseModel):
     nombre: str
@@ -10,4 +11,10 @@ class GrupoMuscularOut(GrupoMuscularBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class GrupoMuscularUpdate(GrupoMuscularBase):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+
+    

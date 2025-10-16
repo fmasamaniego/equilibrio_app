@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.modelos import Base
@@ -11,7 +11,8 @@ class Usuario(Base):
     apellido = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     rol = Column(String, nullable=False, default="alumno")  # admin, profesor, alumno
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    observaciones = Column(String, nullable=True)
+    activo = Column(Boolean(), default=True, nullable=False)
 
     # relaciones
     rutinas_asignadas = relationship("Rutina", back_populates="alumno", foreign_keys="Rutina.id_alumno")
