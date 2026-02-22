@@ -45,7 +45,7 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Usuario</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Alias</label>
             <div className="relative">
               <UserIcon className="absolute left-3.5 top-3.5 w-5 h-5 text-gray-400" />
               <input
@@ -53,7 +53,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
-                placeholder="Tu nombre de usuario"
+                placeholder="Tu alias de acceso"
                 required
                 autoFocus
               />
