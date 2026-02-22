@@ -126,7 +126,7 @@ export default function UsuariosPage() {
               value={form.usuario}
               onChange={(e) => setForm({ ...form, usuario: e.target.value })}
               required
-              placeholder="ej: juan.perez"
+              placeholder="ej: fsamaniego"
               className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>

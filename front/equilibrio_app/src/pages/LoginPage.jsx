@@ -53,7 +53,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
-                placeholder="Tu alias de acceso"
+                placeholder="ej: fsamaniego"
                 required
                 autoFocus
               />
