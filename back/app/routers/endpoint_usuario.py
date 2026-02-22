@@ -18,6 +18,8 @@ def crear_usuario(
     current_user: Usuario = Depends(require_admin),
 ):
     """Solo admin puede crear usuarios."""
+    if not usuario.usuario or not usuario.usuario.strip():
+        raise HTTPException(status_code=400, detail="El alias es obligatorio")
     if usuario.rol not in ("admin", "profesor", "alumno"):
         raise HTTPException(status_code=400, detail="Rol inválido. Opciones: admin, profesor, alumno")
 
