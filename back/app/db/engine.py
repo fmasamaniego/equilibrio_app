@@ -1,15 +1,14 @@
 from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator
-from sqlalchemy.orm import sessionmaker
 
+from app.config import DATABASE_URL
 
-
-
-DATABASE_URL = "postgresql://postgres:opi2025@localhost:5433/gim_equilibrio"
-
-
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    connect_args={"client_encoding": "utf8"},
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

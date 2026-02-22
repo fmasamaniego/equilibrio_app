@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, ForeignKey, DateTime, String
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from app.db.engine import Base
+from app.modelos import Base
 
 
 class HistorialRutina(Base):
@@ -14,6 +14,5 @@ class HistorialRutina(Base):
     fecha_asignacion = Column(DateTime, default=datetime.utcnow)
     notas = Column(String, nullable=True)
 
-    # Relaciones
     rutina = relationship("Rutina", back_populates="historial")
     alumno = relationship("Usuario", back_populates="historial_rutinas")

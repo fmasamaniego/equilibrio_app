@@ -16,7 +16,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(),
     # Buscar usuario por nombre
     user = db.query(Usuario).filter(Usuario.nombre == form_data.username).first()
 
-    if not user or not verify_password(form_data.password, user.password):
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas",
