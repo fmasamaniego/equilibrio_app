@@ -3,7 +3,8 @@ from typing import Optional
 
 
 class UsuarioBase(BaseModel):
-    nombre: str
+    usuario: str            # alias de login (único)
+    nombre: str             # nombre real para mostrar y buscar
     apellido: str
     rol: str = "alumno"  # admin, profesor, alumno
 

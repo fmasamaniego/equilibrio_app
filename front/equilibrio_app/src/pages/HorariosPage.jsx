@@ -7,6 +7,7 @@ import * as reservaService from '../api/reservaService'
 import * as dashboardService from '../api/dashboardService'
 import { listar as listarUsuarios } from '../api/usuarioService'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import AlumnoSearchSelect from '../components/ui/AlumnoSearchSelect'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import PageTransition from '../components/ui/PageTransition'
@@ -590,16 +591,14 @@ export default function HorariosPage() {
                               {/* Agregar alumno al turno */}
                               <div className="border-t border-gray-100 pt-3">
                                 <p className="text-xs font-medium text-gray-500 mb-2">Agregar al turno</p>
-                                <select
-                                  value={addAlumnoId}
-                                  onChange={(e) => setAddAlumnoId(e.target.value)}
-                                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white mb-2"
-                                >
-                                  <option value="">Seleccionar alumno...</option>
-                                  {alumnosDisponibles.map((a) => (
-                                    <option key={a.id} value={a.id}>{a.nombre} {a.apellido}</option>
-                                  ))}
-                                </select>
+                                <div className="mb-2">
+                                  <AlumnoSearchSelect
+                                    alumnos={alumnosDisponibles}
+                                    value={addAlumnoId}
+                                    onChange={setAddAlumnoId}
+                                    placeholder="Buscar alumno..."
+                                  />
+                                </div>
                                 {addAlumnoId && (
                                   <div className="flex gap-2">
                                     <button

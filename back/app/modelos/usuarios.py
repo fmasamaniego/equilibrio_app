@@ -7,7 +7,8 @@ class Usuario(Base):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, nullable=False, unique=True)
+    usuario = Column(String, nullable=False, unique=True)   # alias para login
+    nombre = Column(String, nullable=False)
     apellido = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     rol = Column(String, nullable=False, default="alumno")  # admin, profesor, alumno

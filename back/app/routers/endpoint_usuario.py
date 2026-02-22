@@ -21,11 +21,12 @@ def crear_usuario(
     if usuario.rol not in ("admin", "profesor", "alumno"):
         raise HTTPException(status_code=400, detail="Rol inválido. Opciones: admin, profesor, alumno")
 
-    db_usuario = db.query(Usuario).filter(Usuario.nombre == usuario.nombre).first()
+    db_usuario = db.query(Usuario).filter(Usuario.usuario == usuario.usuario).first()
     if db_usuario:
-        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese nombre")
+        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese alias")
 
     nuevo_usuario = Usuario(
+        usuario=usuario.usuario,
         nombre=usuario.nombre,
         apellido=usuario.apellido,
         password_hash=get_password_hash(usuario.password),

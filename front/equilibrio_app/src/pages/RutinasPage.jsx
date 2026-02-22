@@ -12,6 +12,7 @@ import EmptyState from '../components/ui/EmptyState'
 import PageTransition from '../components/ui/PageTransition'
 import { ClipboardDocumentListIcon } from '../components/ui/Icon'
 import RutinaDetailDrawer from '../components/ui/RutinaDetailDrawer'
+import AlumnoSearchSelect from '../components/ui/AlumnoSearchSelect'
 
 export default function RutinasPage() {
   const { showToast } = useToast()
@@ -181,10 +182,15 @@ export default function RutinasPage() {
           </button>
         </div>
 
-        <select value={filtroAlumno} onChange={(e) => setFiltroAlumno(e.target.value)} className="w-full mb-4 px-3 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-          <option value="">Todos los alumnos</option>
-          {alumnos.map((a) => <option key={a.id} value={a.id}>{a.nombre} {a.apellido}</option>)}
-        </select>
+        <div className="mb-4">
+          <AlumnoSearchSelect
+            alumnos={alumnos}
+            value={filtroAlumno}
+            onChange={setFiltroAlumno}
+            placeholder="Filtrar por alumno..."
+            includeAll
+          />
+        </div>
 
         {rutinas.length === 0 ? (
           <EmptyState message="No hay rutinas" />
@@ -222,10 +228,13 @@ export default function RutinasPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Alumno</label>
-              <select value={form.alumno_id} onChange={(e) => setForm({ ...form, alumno_id: e.target.value })} required className="w-full px-3 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="">Seleccionar</option>
-                {alumnos.map((a) => <option key={a.id} value={a.id}>{a.nombre} {a.apellido}</option>)}
-              </select>
+              <AlumnoSearchSelect
+                alumnos={alumnos}
+                value={form.alumno_id}
+                onChange={(id) => setForm({ ...form, alumno_id: id })}
+                placeholder="Buscar alumno..."
+                required
+              />
             </div>
 
             <div>
@@ -360,10 +369,13 @@ export default function RutinasPage() {
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Asignar a alumno</label>
-              <select value={dupForm.alumno_id} onChange={(e) => setDupForm({ ...dupForm, alumno_id: e.target.value })} required className="w-full px-3 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="">Seleccionar alumno</option>
-                {alumnos.map((a) => <option key={a.id} value={a.id}>{a.nombre} {a.apellido}</option>)}
-              </select>
+              <AlumnoSearchSelect
+                alumnos={alumnos}
+                value={dupForm.alumno_id}
+                onChange={(id) => setDupForm({ ...dupForm, alumno_id: id })}
+                placeholder="Buscar alumno..."
+                required
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Nuevo nombre (opcional)</label>

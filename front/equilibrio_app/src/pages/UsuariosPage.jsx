@@ -21,7 +21,7 @@ export default function UsuariosPage() {
   const [loading, setLoading] = useState(true)
   const [filtroRol, setFiltroRol] = useState('')
   const [modal, setModal] = useState(false)
-  const [form, setForm] = useState({ nombre: '', apellido: '', password: '', rol: 'alumno' })
+  const [form, setForm] = useState({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
   const [deleteId, setDeleteId] = useState(null)
 
   const fetch = async () => {
@@ -41,7 +41,7 @@ export default function UsuariosPage() {
       await usuarioService.crear(form)
       showToast('Usuario creado')
       setModal(false)
-      setForm({ nombre: '', apellido: '', password: '', rol: 'alumno' })
+      setForm({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
       fetch()
     } catch { showToast('Error creando usuario', 'error') }
   }
@@ -91,6 +91,7 @@ export default function UsuariosPage() {
             <div className="flex items-center gap-3">
               <div>
                 <p className="font-medium text-gray-900 text-lg">{u.nombre} {u.apellido}</p>
+                <p className="text-sm text-gray-400">@{u.usuario}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`text-sm px-2 py-0.5 rounded-full font-medium ${rolColors[u.rol]}`}>{u.rol}</span>
                   <span className={`text-sm ${u.activo ? 'text-green-600' : 'text-red-500'}`}>
@@ -118,19 +119,51 @@ export default function UsuariosPage() {
       <Modal open={modal} onClose={() => setModal(false)} title="Nuevo Usuario">
         <form onSubmit={handleCreate} className="space-y-3">
           <div>
-            <label className="block text-base text-gray-700 mb-1">Nombre de usuario</label>
-            <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <label className="block text-base font-medium text-gray-700 mb-1">
+              Alias <span className="text-xs font-normal text-gray-400">(para ingresar al sistema)</span>
+            </label>
+            <input
+              value={form.usuario}
+              onChange={(e) => setForm({ ...form, usuario: e.target.value })}
+              required
+              placeholder="ej: juan.perez"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-1">Nombre</label>
+              <input
+                value={form.nombre}
+                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                required
+                placeholder="Juan"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-1">Apellido</label>
+              <input
+                value={form.apellido}
+                onChange={(e) => setForm({ ...form, apellido: e.target.value })}
+                required
+                placeholder="Pérez"
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
           </div>
           <div>
-            <label className="block text-base text-gray-700 mb-1">Apellido</label>
-            <input value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} required className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <label className="block text-base font-medium text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
           <div>
-            <label className="block text-base text-gray-700 mb-1">Contraseña</label>
-            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div>
-            <label className="block text-base text-gray-700 mb-1">Rol</label>
+            <label className="block text-base font-medium text-gray-700 mb-1">Rol</label>
             <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })} className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="alumno">Alumno</option>
               <option value="profesor">Profesor</option>
