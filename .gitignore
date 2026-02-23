@@ -19,7 +19,7 @@ venv/
 
 # Node
 node_modules/
-front/equilibrio_app/dist/
+frontend/dist/
 
 # OS
 .DS_Store
