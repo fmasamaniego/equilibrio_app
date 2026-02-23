@@ -21,6 +21,7 @@ import {
 } from '../components/ui/Icon'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+const DIAS_FULL = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 function getMonday(d) {
   const date = new Date(d)
@@ -349,6 +350,32 @@ export default function HorariosPage() {
     }
   }
 
+  const toggleDiaSlot = async (slot, dia) => {
+    const current = slot.dias_activos ?? [0, 1, 2, 3, 4, 5]
+    const newDias = current.includes(dia)
+      ? current.filter((d) => d !== dia)
+      : [...current, dia].sort((a, b) => a - b)
+    try {
+      await horarioService.actualizar(slot.id, { dias_activos: newDias })
+      fetchSlots()
+    } catch {
+      showToast('Error actualizando días', 'error')
+    }
+  }
+
+  const handleQuitarDia = async (horario) => {
+    const diaActual = diaSemana()
+    const current = horario.dias_activos ?? [0, 1, 2, 3, 4, 5]
+    const newDias = current.filter((d) => d !== diaActual)
+    try {
+      await horarioService.actualizar(horario.id, { dias_activos: newDias })
+      showToast(`Turno quitado del ${DIAS_FULL[diaActual]}`)
+      fetchWeekData()
+    } catch {
+      showToast('Error al quitar turno', 'error')
+    }
+  }
+
   // ─── Datos derivados ─────────────────────
   const alumnosDisponibles = alumnos.filter(
     (a) => !alumnosEnSlot.some((e) => e.alumno_id === a.id)
@@ -442,7 +469,7 @@ export default function HorariosPage() {
                   const isExpanded = expandedSlotId === h.id
 
                   return (
-                    <div key={h.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-md">
+                    <div key={h.id} className="rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-md">
                       {/* Slot header — clickeable */}
                       <button
                         onClick={() => !isAlumno && handleSlotToggle(h)}
@@ -457,10 +484,19 @@ export default function HorariosPage() {
                               {h.nombre && <p className="text-sm text-gray-500">{h.nombre}</p>}
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${badge}`}>
                               {h.ocupados}{h.capacidad ? ` / ${h.capacidad}` : ''}
                             </span>
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleQuitarDia(h) }}
+                                title={`Quitar del ${DIAS_FULL[diaSemana()]}`}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <XMarkIcon className="w-4 h-4" />
+                              </button>
+                            )}
                             {!isAlumno && (
                               <svg
                                 className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
@@ -655,18 +691,39 @@ export default function HorariosPage() {
                       s.activo ? 'border-gray-200' : 'border-gray-100 opacity-60'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <p className="font-semibold text-gray-900 text-base">
                           {s.hora_inicio} - {s.hora_fin}
                         </p>
-                        <div className="flex gap-2 mt-1 text-sm text-gray-500">
+                        <div className="flex gap-2 mt-1 text-sm text-gray-500 flex-wrap">
                           {s.nombre && <span>{s.nombre}</span>}
                           <span>Cap: {s.capacidad || 'ilimitada'}</span>
                           {!s.activo && <span className="text-red-500 font-medium">Inactivo</span>}
                         </div>
+                        {/* Pills de días */}
+                        <div className="flex gap-1 mt-2 flex-wrap">
+                          {DIAS.map((dia, i) => {
+                            const activo = (s.dias_activos ?? [0,1,2,3,4,5]).includes(i)
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => toggleDiaSlot(s, i)}
+                                title={activo ? `Quitar ${DIAS_FULL[i]}` : `Agregar ${DIAS_FULL[i]}`}
+                                className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${
+                                  activo
+                                    ? 'bg-indigo-100 text-indigo-700 hover:bg-red-100 hover:text-red-600'
+                                    : 'bg-gray-100 text-gray-400 hover:bg-indigo-50 hover:text-indigo-500'
+                                }`}
+                              >
+                                {dia}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 shrink-0">
                         <button onClick={() => openSlotModal(s)} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
                           Editar
                         </button>

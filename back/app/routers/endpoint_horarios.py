@@ -55,6 +55,10 @@ def obtener_disponibilidad(
 
     resultado = []
     for h in horarios:
+        dias = h.dias_activos if h.dias_activos is not None else [0, 1, 2, 3, 4, 5]
+        if dia_semana not in dias:
+            continue
+
         fijos = db.query(AsignacionFija).filter(
             AsignacionFija.horario_id == h.id,
             AsignacionFija.dia_semana == dia_semana
@@ -76,6 +80,7 @@ def obtener_disponibilidad(
             nombre=h.nombre,
             capacidad=h.capacidad,
             activo=h.activo,
+            dias_activos=dias,
             ocupados=ocupados,
             disponibles=disponibles
         ))
@@ -99,6 +104,10 @@ def obtener_disponibilidad_semanal(
 
         horarios_dia = []
         for h in horarios:
+            dias = h.dias_activos if h.dias_activos is not None else [0, 1, 2, 3, 4, 5]
+            if dia_semana not in dias:
+                continue
+
             fijos = db.query(AsignacionFija).filter(
                 AsignacionFija.horario_id == h.id,
                 AsignacionFija.dia_semana == dia_semana
@@ -120,6 +129,7 @@ def obtener_disponibilidad_semanal(
                 nombre=h.nombre,
                 capacidad=h.capacidad,
                 activo=h.activo,
+                dias_activos=dias,
                 ocupados=ocupados,
                 disponibles=disponibles
             ))

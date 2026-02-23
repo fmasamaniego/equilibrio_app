@@ -39,6 +39,10 @@ def migrate():
         # 4. Quitar constraint unique de nombre (nombre pasa a ser solo nombre real)
         ("nombre (drop unique)",
          "ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_nombre_key"),
+
+        # ── Migración 3: dias_activos en horarios ─────────────────────────────
+        ("horarios.dias_activos",
+         "ALTER TABLE horarios ADD COLUMN IF NOT EXISTS dias_activos JSONB NOT NULL DEFAULT '[0,1,2,3,4,5]'"),
     ]
 
     with engine.connect() as conn:

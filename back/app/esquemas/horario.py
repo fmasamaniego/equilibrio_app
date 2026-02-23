@@ -8,6 +8,7 @@ class HorarioBase(BaseModel):
     hora_fin: time
     nombre: Optional[str] = None
     capacidad: Optional[int] = None
+    dias_activos: List[int] = [0, 1, 2, 3, 4, 5]
 
 
 class HorarioCreate(HorarioBase):
@@ -20,6 +21,7 @@ class HorarioUpdate(BaseModel):
     nombre: Optional[str] = None
     capacidad: Optional[int] = None
     activo: Optional[bool] = None
+    dias_activos: Optional[List[int]] = None
 
 
 class HorarioOut(HorarioBase):
