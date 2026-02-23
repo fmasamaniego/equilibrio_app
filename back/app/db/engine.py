@@ -7,7 +7,9 @@ from app.config import DATABASE_URL
 engine = create_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={"client_encoding": "utf8"},
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args={"client_encoding": "utf8", "sslmode": "require"},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
