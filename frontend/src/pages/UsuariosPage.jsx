@@ -46,11 +46,17 @@ export default function UsuariosPage() {
   useEffect(() => { setPage(1) }, [busqueda])
 
   const filtered = useMemo(() => {
-    if (!busqueda.trim()) return usuarios
-    const q = busqueda.toLowerCase()
-    return usuarios.filter((u) =>
-      `${u.nombre} ${u.apellido}`.toLowerCase().includes(q) ||
-      u.usuario?.toLowerCase().includes(q)
+    const base = !busqueda.trim()
+      ? usuarios
+      : (() => {
+          const q = busqueda.toLowerCase()
+          return usuarios.filter((u) =>
+            `${u.nombre} ${u.apellido}`.toLowerCase().includes(q) ||
+            u.usuario?.toLowerCase().includes(q)
+          )
+        })()
+    return [...base].sort((a, b) =>
+      `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`, 'es')
     )
   }, [usuarios, busqueda])
 
