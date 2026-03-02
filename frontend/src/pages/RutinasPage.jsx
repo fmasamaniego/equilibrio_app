@@ -393,6 +393,7 @@ export default function RutinasPage() {
           rutina={drawerRutina}
           alumnoNombre={drawerRutina ? alumnoNombre(drawerRutina.alumno_id) : ''}
           ejerciciosDisp={ejerciciosDisp}
+          grupos={grupos}
           onClose={() => setDrawerRutina(null)}
         />
       </div>

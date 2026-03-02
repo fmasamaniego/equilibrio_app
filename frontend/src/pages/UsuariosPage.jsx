@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import * as usuarioService from '../api/usuarioService'
@@ -12,6 +12,8 @@ const rolColors = {
   alumno: 'bg-green-100 text-green-700',
 }
 
+const PAGE_SIZE = 20
+
 export default function UsuariosPage() {
   const { user: currentUser } = useAuth()
   const { showToast } = useToast()
@@ -20,11 +22,13 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtroRol, setFiltroRol] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+  const [page, setPage] = useState(1)
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
   const [deleteId, setDeleteId] = useState(null)
 
-  const fetch = async () => {
+  const fetchUsuarios = async () => {
     setLoading(true)
     try {
       const data = await usuarioService.listar({ rol: filtroRol || undefined })
@@ -33,7 +37,35 @@ export default function UsuariosPage() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetch() }, [filtroRol])
+  useEffect(() => {
+    fetchUsuarios()
+    setPage(1)
+  }, [filtroRol])
+
+  // Resetear página al buscar
+  useEffect(() => { setPage(1) }, [busqueda])
+
+  const filtered = useMemo(() => {
+    if (!busqueda.trim()) return usuarios
+    const q = busqueda.toLowerCase()
+    return usuarios.filter((u) =>
+      `${u.nombre} ${u.apellido}`.toLowerCase().includes(q) ||
+      u.usuario?.toLowerCase().includes(q)
+    )
+  }, [usuarios, busqueda])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Páginas visibles en el paginador (máximo 5)
+  const pageNumbers = useMemo(() => {
+    const delta = 2
+    const range = []
+    for (let i = Math.max(1, page - delta); i <= Math.min(totalPages, page + delta); i++) {
+      range.push(i)
+    }
+    return range
+  }, [page, totalPages])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -42,7 +74,7 @@ export default function UsuariosPage() {
       showToast('Usuario creado')
       setModal(false)
       setForm({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
-      fetch()
+      fetchUsuarios()
     } catch { showToast('Error creando usuario', 'error') }
   }
 
@@ -51,7 +83,7 @@ export default function UsuariosPage() {
       if (u.activo) await usuarioService.desactivar(u.id)
       else await usuarioService.activar(u.id)
       showToast(u.activo ? 'Usuario desactivado' : 'Usuario activado')
-      fetch()
+      fetchUsuarios()
     } catch (err) {
       showToast(err.response?.data?.detail || 'Error', 'error')
     }
@@ -61,7 +93,7 @@ export default function UsuariosPage() {
     try {
       await usuarioService.eliminar(deleteId)
       showToast('Usuario eliminado')
-      fetch()
+      fetchUsuarios()
     } catch (err) {
       showToast(err.response?.data?.detail || 'Error al eliminar', 'error')
     }
@@ -78,26 +110,47 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} className="w-full mb-4 px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <option value="">Todos los roles</option>
-        <option value="admin">Admin</option>
-        <option value="profesor">Profesor</option>
-        <option value="alumno">Alumno</option>
-      </select>
+      {/* Filtros */}
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por nombre o alias..."
+          className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <select
+          value={filtroRol}
+          onChange={(e) => setFiltroRol(e.target.value)}
+          className="px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="">Todos</option>
+          <option value="admin">Admin</option>
+          <option value="profesor">Profesor</option>
+          <option value="alumno">Alumno</option>
+        </select>
+      </div>
 
+      {/* Conteo */}
+      <p className="text-sm text-gray-400 mb-3">
+        {filtered.length === 0
+          ? 'Sin resultados'
+          : `Mostrando ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} de ${filtered.length} usuario${filtered.length !== 1 ? 's' : ''}`
+        }
+      </p>
+
+      {/* Lista */}
       <div className="space-y-2">
-        {usuarios.map((u) => (
+        {paginated.map((u) => (
           <div key={u.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <p className="font-medium text-gray-900 text-lg">{u.nombre} {u.apellido}</p>
-                <p className="text-sm text-gray-400">@{u.usuario}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-sm px-2 py-0.5 rounded-full font-medium ${rolColors[u.rol]}`}>{u.rol}</span>
-                  <span className={`text-sm ${u.activo ? 'text-green-600' : 'text-red-500'}`}>
-                    {u.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
+            <div>
+              <p className="font-medium text-gray-900 text-lg">{u.nombre} {u.apellido}</p>
+              <p className="text-sm text-gray-400">@{u.usuario}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-sm px-2 py-0.5 rounded-full font-medium ${rolColors[u.rol]}`}>{u.rol}</span>
+                <span className={`text-sm ${u.activo ? 'text-green-600' : 'text-red-500'}`}>
+                  {u.activo ? 'Activo' : 'Inactivo'}
+                </span>
               </div>
             </div>
             {isAdmin && u.id !== currentUser.id && (
@@ -113,7 +166,57 @@ export default function UsuariosPage() {
             )}
           </div>
         ))}
+        {paginated.length === 0 && (
+          <p className="text-center text-gray-400 py-8 text-sm">Sin resultados</p>
+        )}
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1 mt-5">
+          <button
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 1}
+            className="px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            ‹ Ant
+          </button>
+
+          {pageNumbers[0] > 1 && (
+            <>
+              <button onClick={() => setPage(1)} className="w-9 h-9 text-sm rounded-lg hover:bg-gray-100 transition-colors">1</button>
+              {pageNumbers[0] > 2 && <span className="px-1 text-gray-400">…</span>}
+            </>
+          )}
+
+          {pageNumbers.map((n) => (
+            <button
+              key={n}
+              onClick={() => setPage(n)}
+              className={`w-9 h-9 text-sm rounded-lg font-medium transition-colors ${
+                n === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+
+          {pageNumbers[pageNumbers.length - 1] < totalPages && (
+            <>
+              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-gray-400">…</span>}
+              <button onClick={() => setPage(totalPages)} className="w-9 h-9 text-sm rounded-lg hover:bg-gray-100 transition-colors">{totalPages}</button>
+            </>
+          )}
+
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page === totalPages}
+            className="px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Sig ›
+          </button>
+        </div>
+      )}
 
       {/* Modal crear */}
       <Modal open={modal} onClose={() => setModal(false)} title="Nuevo Usuario">

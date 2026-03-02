@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { XMarkIcon, ArrowDownTrayIcon } from './Icon'
 
-export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDisp, onClose }) {
+export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDisp, grupos = [], onClose }) {
   const [activeDay, setActiveDay] = useState(1)
 
   if (!rutina) return null
@@ -10,8 +10,13 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
   const currentDay = dias.includes(activeDay) ? activeDay : dias[0]
   const ejerciciosDelDia = rutina.ejercicios.filter((e) => e.dia === currentDay)
 
-  const nombreEjercicio = (id) =>
-    ejerciciosDisp.find((e) => e.id === Number(id))?.nombre || `Ejercicio #${id}`
+  const getEjercicio = (id) => ejerciciosDisp.find((e) => e.id === Number(id))
+  const nombreEjercicio = (id) => getEjercicio(id)?.nombre || `Ejercicio #${id}`
+  const grupoNombre = (id) => {
+    const ej = getEjercicio(id)
+    if (!ej?.grupo_muscular_id) return null
+    return grupos.find((g) => g.id === ej.grupo_muscular_id)?.nombre || null
+  }
 
   const handleDownloadPdf = async () => {
     const { jsPDF } = await import('jspdf')
@@ -64,7 +69,9 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
       doc.setFont('helvetica', 'normal')
       for (const ej of ejercicios) {
         if (y > 270) { doc.addPage(); y = 20 }
-        doc.text(nombreEjercicio(ej.ejercicio_id), margin + 2, y, { maxWidth: 105 })
+        const grupo = grupoNombre(ej.ejercicio_id)
+        const labelEj = grupo ? `${grupo} · ${nombreEjercicio(ej.ejercicio_id)}` : nombreEjercicio(ej.ejercicio_id)
+        doc.text(labelEj, margin + 2, y, { maxWidth: 105 })
         doc.text(String(ej.repeticiones ?? '-'), margin + 110, y)
         doc.text(ej.peso ? String(ej.peso) : '-', margin + 135, y)
         doc.text(ej.notas || '', margin + 160, y, { maxWidth: 32 })
@@ -137,6 +144,9 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
                   <span className="text-xs font-bold text-indigo-600">{i + 1}</span>
                 </div>
                 <div className="flex-1 min-w-0">
+                  {grupoNombre(ej.ejercicio_id) && (
+                    <p className="text-xs font-medium text-indigo-500 uppercase tracking-wide mb-0.5">{grupoNombre(ej.ejercicio_id)}</p>
+                  )}
                   <p className="font-semibold text-gray-900 text-sm">{nombreEjercicio(ej.ejercicio_id)}</p>
                   <div className="flex gap-4 mt-1 text-sm text-gray-500">
                     <span><span className="font-medium text-gray-700">{ej.repeticiones}</span> reps</span>

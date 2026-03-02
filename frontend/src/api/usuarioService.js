@@ -1,6 +1,6 @@
 import client from './client'
 
-export async function listar({ rol, activo, skip = 0, limit = 100 } = {}) {
+export async function listar({ rol, activo, skip = 0, limit = 500 } = {}) {
   const params = {}
   if (rol) params.rol = rol
   if (activo !== undefined) params.activo = activo

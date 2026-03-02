@@ -45,7 +45,7 @@ def listar_usuarios(
     rol: Optional[str] = Query(None, description="Filtrar por rol: admin, profesor, alumno"),
     activo: Optional[bool] = Query(None, description="Filtrar por estado activo/inactivo"),
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 500,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):
@@ -55,7 +55,7 @@ def listar_usuarios(
         query = query.filter(Usuario.rol == rol)
     if activo is not None:
         query = query.filter(Usuario.activo == activo)
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Usuario.apellido, Usuario.nombre).offset(skip).limit(limit).all()
 
 
 @router.get("/me", response_model=UsuarioOut)
