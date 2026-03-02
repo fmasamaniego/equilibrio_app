@@ -56,7 +56,7 @@ export default function UsuariosPage() {
           )
         })()
     return [...base].sort((a, b) =>
-      `${a.apellido ?? ''} ${a.nombre ?? ''}`.localeCompare(`${b.apellido ?? ''} ${b.nombre ?? ''}`, 'es')
+      `${a.nombre ?? ''} ${a.apellido ?? ''}`.localeCompare(`${b.nombre ?? ''} ${b.apellido ?? ''}`, 'es')
     )
   }, [usuarios, busqueda])
 
