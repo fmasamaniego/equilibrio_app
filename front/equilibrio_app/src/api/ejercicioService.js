@@ -1,6 +1,6 @@
 import client from './client'
 
-export async function listar({ grupo_muscular_id, skip = 0, limit = 1000 } = {}) {
+export async function listar({ grupo_muscular_id, skip = 0, limit = 100 } = {}) {
   const params = { skip, limit }
   if (grupo_muscular_id) params.grupo_muscular_id = grupo_muscular_id
   const { data } = await client.get('/ejercicios/', { params })

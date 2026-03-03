@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '../hooks/useToast'
 import * as ejercicioService from '../api/ejercicioService'
 import * as grupoService from '../api/grupoMuscularService'
@@ -7,15 +7,11 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
 
-const PAGE_SIZE = 20
-
 export default function EjerciciosPage() {
   const { showToast } = useToast()
   const [ejercicios, setEjercicios] = useState([])
   const [grupos, setGrupos] = useState([])
   const [filtroGrupo, setFiltroGrupo] = useState('')
-  const [busqueda, setBusqueda] = useState('')
-  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
 
   const [modalEj, setModalEj] = useState(false)
@@ -33,7 +29,7 @@ export default function EjerciciosPage() {
     setLoading(true)
     try {
       const [ej, gr] = await Promise.all([
-        ejercicioService.listar(),
+        ejercicioService.listar({ grupo_muscular_id: filtroGrupo || undefined }),
         grupoService.listar(),
       ])
       setEjercicios(ej)
@@ -42,32 +38,7 @@ export default function EjerciciosPage() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchData() }, [])
-
-  // Resetear página al cambiar filtros
-  useEffect(() => { setPage(1) }, [filtroGrupo, busqueda])
-
-  const filtered = useMemo(() => {
-    let base = ejercicios
-    if (filtroGrupo) base = base.filter((e) => String(e.grupo_muscular_id) === String(filtroGrupo))
-    if (busqueda.trim()) {
-      const q = busqueda.toLowerCase()
-      base = base.filter((e) => e.nombre.toLowerCase().includes(q))
-    }
-    return [...base].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  }, [ejercicios, filtroGrupo, busqueda])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  const pageNumbers = useMemo(() => {
-    const delta = 2
-    const range = []
-    for (let i = Math.max(1, page - delta); i <= Math.min(totalPages, page + delta); i++) {
-      range.push(i)
-    }
-    return range
-  }, [page, totalPages])
+  useEffect(() => { fetchData() }, [filtroGrupo])
 
   const openEjModal = (ej = null) => {
     setEditEj(ej)
@@ -127,8 +98,14 @@ export default function EjerciciosPage() {
         </div>
       </div>
 
+      {/* Filtro */}
+      <select value={filtroGrupo} onChange={(e) => setFiltroGrupo(e.target.value)} className="w-full mb-4 px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">Todos los grupos</option>
+        {grupos.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+      </select>
+
       {/* Grupos */}
-      <div className="mb-5">
+      <div className="mb-6">
         <h3 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-2">Grupos Musculares</h3>
         <div className="flex flex-wrap gap-2">
           {grupos.map((g) => (
@@ -141,39 +118,12 @@ export default function EjerciciosPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-col gap-2 mb-4">
-        <select
-          value={filtroGrupo}
-          onChange={(e) => setFiltroGrupo(e.target.value)}
-          className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="">Todos los grupos</option>
-          {grupos.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
-        </select>
-        <input
-          type="text"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar ejercicio..."
-          className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-
-      {/* Conteo */}
-      <p className="text-sm text-gray-400 mb-3">
-        {filtered.length === 0
-          ? 'Sin resultados'
-          : `Mostrando ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} de ${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`
-        }
-      </p>
-
-      {/* Lista */}
-      {filtered.length === 0 ? (
+      {/* Lista ejercicios */}
+      {ejercicios.length === 0 ? (
         <EmptyState message="No hay ejercicios" />
       ) : (
         <div className="space-y-2">
-          {paginated.map((ej) => (
+          {ejercicios.map((ej) => (
             <div key={ej.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
               <div>
                 <p className="font-medium text-gray-900 text-lg">{ej.nombre}</p>
@@ -185,53 +135,6 @@ export default function EjerciciosPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1 mt-5">
-          <button
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
-            className="px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            ‹ Ant
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => setPage(1)} className="w-9 h-9 text-sm rounded-lg hover:bg-gray-100 transition-colors">1</button>
-              {pageNumbers[0] > 2 && <span className="px-1 text-gray-400">…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => setPage(n)}
-              className={`w-9 h-9 text-sm rounded-lg font-medium transition-colors ${
-                n === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-700'
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-gray-400">…</span>}
-              <button onClick={() => setPage(totalPages)} className="w-9 h-9 text-sm rounded-lg hover:bg-gray-100 transition-colors">{totalPages}</button>
-            </>
-          )}
-
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page === totalPages}
-            className="px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            Sig ›
-          </button>
         </div>
       )}
 

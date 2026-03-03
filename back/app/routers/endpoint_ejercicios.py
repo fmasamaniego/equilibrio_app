@@ -33,7 +33,7 @@ def crear_ejercicio(
 @router.get("/", response_model=List[EjercicioOut])
 def listar_ejercicios(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 1000,
     grupo_muscular_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -42,7 +42,7 @@ def listar_ejercicios(
     query = db.query(Ejercicio)
     if grupo_muscular_id:
         query = query.filter(Ejercicio.grupo_muscular_id == grupo_muscular_id)
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Ejercicio.nombre).offset(skip).limit(limit).all()
 
 
 @router.get("/{ejercicio_id}", response_model=EjercicioOut)
