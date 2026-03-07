@@ -219,6 +219,11 @@ def actualizar_reserva(
         raise HTTPException(status_code=403, detail="No tienes acceso a esta reserva")
 
     update_data = reserva_update.model_dump(exclude_unset=True)
+
+    # Alumnos solo pueden cancelar sus propias reservas, no cambiar a otros estados
+    if current_user.rol == "alumno" and "estado" in update_data and update_data["estado"] != "cancelada":
+        raise HTTPException(status_code=403, detail="Solo puedes cancelar tu propia reserva")
+
     for key, value in update_data.items():
         setattr(reserva, key, value)
 

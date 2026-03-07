@@ -1,12 +1,20 @@
 import logging
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 logger = logging.getLogger("uvicorn.error")
 
 from app.config import CORS_ORIGINS
+
+_debug = os.getenv("DEBUG", "false").lower() == "true"
+
+limiter = Limiter(key_func=get_remote_address)
 from app.routers import endpoint_usuario as usuarios
 from app.routers import endpoint_grupo_musculares as grupos_musculares
 from app.routers import endpoint_ejercicios as ejercicios
@@ -20,7 +28,15 @@ from app.routers import endpoint_asignaciones as asignaciones
 from app.routers import endpoint_reservas as reservas
 from app.routers import endpoint_dashboard_horarios as dashboard_horarios
 
-app = FastAPI(title="Sistema de Rutinas de Gimnasio")
+app = FastAPI(
+    title="Sistema de Rutinas de Gimnasio",
+    docs_url="/docs" if _debug else None,
+    redoc_url="/redoc" if _debug else None,
+    openapi_url="/openapi.json" if _debug else None,
+)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

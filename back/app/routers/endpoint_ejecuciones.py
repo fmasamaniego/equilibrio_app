@@ -73,9 +73,9 @@ def registrar_ejecucion(
 @router.get("/mis-ejecuciones", response_model=List[EjecucionRutinaOut])
 def listar_mis_ejecuciones(
     rutina_id: Optional[int] = Query(None, description="Filtrar por rutina"),
-    dias: Optional[int] = Query(None, description="Últimos N días"),
-    skip: int = 0,
-    limit: int = 50,
+    dias: Optional[int] = Query(None, ge=1, le=365, description="Últimos N días"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -98,9 +98,9 @@ def listar_mis_ejecuciones(
 def listar_ejecuciones_alumno(
     alumno_id: int,
     rutina_id: Optional[int] = Query(None),
-    dias: Optional[int] = Query(None, description="Últimos N días"),
-    skip: int = 0,
-    limit: int = 50,
+    dias: Optional[int] = Query(None, ge=1, le=365, description="Últimos N días"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):
@@ -175,7 +175,7 @@ def obtener_ejecucion(
 
 @router.get("/progreso/mi-progreso", response_model=List[ProgresoResumenOut])
 def obtener_mi_progreso(
-    dias: int = Query(30, description="Período en días"),
+    dias: int = Query(30, ge=1, le=365, description="Período en días"),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -189,7 +189,7 @@ def obtener_mi_progreso(
 @router.get("/progreso/alumno/{alumno_id}", response_model=List[ProgresoResumenOut])
 def obtener_progreso_alumno(
     alumno_id: int,
-    dias: int = Query(30, description="Período en días"),
+    dias: int = Query(30, ge=1, le=365, description="Período en días"),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):

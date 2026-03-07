@@ -40,6 +40,7 @@ def crear_rutina(
         db.add(RutinaEjercicio(
             rutina_id=nueva_rutina.id,
             ejercicio_id=ej.ejercicio_id,
+            series=ej.series,
             repeticiones=ej.repeticiones,
             peso=ej.peso,
             dia=ej.dia,
@@ -85,6 +86,7 @@ def actualizar_rutina(
         db.add(RutinaEjercicio(
             rutina_id=rutina_id,
             ejercicio_id=ej.ejercicio_id,
+            series=ej.series,
             repeticiones=ej.repeticiones,
             peso=ej.peso,
             dia=ej.dia,
@@ -99,8 +101,8 @@ def actualizar_rutina(
 @router.get("/", response_model=List[RutinaOut])
 def listar_rutinas(
     alumno_id: Optional[int] = Query(None, description="Filtrar por alumno"),
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -200,6 +202,7 @@ def duplicar_rutina(
         db.add(RutinaEjercicio(
             rutina_id=nueva_rutina.id,
             ejercicio_id=ej.ejercicio_id,
+            series=ej.series,
             repeticiones=ej.repeticiones,
             peso=ej.peso,
             dia=ej.dia,

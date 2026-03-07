@@ -1,17 +1,22 @@
 # routers/login.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.db.engine import get_db
 from app.modelos.usuarios import Usuario
 from app.auth.auth import verify_password, create_access_token, get_password_hash
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(),
+@limiter.limit("10/minute")
+def login(request: Request,
+          form_data: OAuth2PasswordRequestForm = Depends(),
           db: Session = Depends(get_db)):
     # Buscar usuario por alias de login
     user = db.query(Usuario).filter(Usuario.usuario == form_data.username).first()

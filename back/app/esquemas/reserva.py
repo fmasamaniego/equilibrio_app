@@ -1,6 +1,9 @@
-from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
+
+from pydantic import BaseModel, field_validator
+
+ESTADOS_VALIDOS = {"pendiente", "confirmada", "cancelada", "asistio"}
 
 
 class ReservaBase(BaseModel):
@@ -21,6 +24,13 @@ class ReservaCreateAdmin(ReservaBase):
 class ReservaUpdate(BaseModel):
     estado: Optional[str] = None
     notas: Optional[str] = None
+
+    @field_validator("estado")
+    @classmethod
+    def estado_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ESTADOS_VALIDOS:
+            raise ValueError(f"Estado inválido. Opciones: {', '.join(sorted(ESTADOS_VALIDOS))}")
+        return v
 
 
 class ReservaOut(ReservaBase):

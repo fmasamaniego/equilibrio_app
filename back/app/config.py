@@ -17,7 +17,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/gim_equilibrio")
-SECRET_KEY: str = os.getenv("SECRET_KEY", "clave-por-defecto-solo-desarrollo")
+
+_secret = os.getenv("SECRET_KEY", "")
+_INSECURE_DEFAULTS = {"", "clave-por-defecto-solo-desarrollo", "secret", "changeme", "your-secret-key"}
+if _secret in _INSECURE_DEFAULTS:
+    raise RuntimeError(
+        "SECRET_KEY no está configurado o usa un valor inseguro. "
+        "Establece SECRET_KEY en tu .env o en las variables de entorno de producción."
+    )
+SECRET_KEY: str = _secret
+
 ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176").split(",")
