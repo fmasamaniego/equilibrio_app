@@ -43,6 +43,10 @@ def migrate():
         # ── Migración 3: dias_activos en horarios ─────────────────────────────
         ("horarios.dias_activos",
          "ALTER TABLE horarios ADD COLUMN IF NOT EXISTS dias_activos JSONB NOT NULL DEFAULT '[0,1,2,3,4,5]'"),
+
+        # ── Migración 4: series en rutina_ejercicios ──────────────────────────
+        ("rutina_ejercicios.series",
+         "ALTER TABLE rutina_ejercicios ADD COLUMN IF NOT EXISTS series INTEGER NOT NULL DEFAULT 3"),
     ]
 
     with engine.connect() as conn:

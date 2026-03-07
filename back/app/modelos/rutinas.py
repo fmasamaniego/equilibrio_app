@@ -21,6 +21,7 @@ class RutinaEjercicio(Base):
     id = Column(Integer, primary_key=True, index=True)
     rutina_id = Column(Integer, ForeignKey("rutinas.id"), nullable=False)
     ejercicio_id = Column(Integer, ForeignKey("ejercicios.id"), nullable=False)
+    series = Column(Integer, nullable=False, server_default='3')
     repeticiones = Column(Integer, nullable=False)
     peso = Column(Integer, nullable=True)
     dia = Column(Integer, nullable=False)  # 1 = Día 1, 2 = Día 2, etc.

@@ -4,6 +4,7 @@ from typing import List, Optional
 
 class RutinaEjercicioBase(BaseModel):
     ejercicio_id: int
+    series: int = 3
     repeticiones: int
     peso: Optional[int] = None
     dia: int

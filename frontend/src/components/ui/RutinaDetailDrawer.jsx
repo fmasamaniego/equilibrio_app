@@ -61,9 +61,10 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
       doc.setFillColor(245, 245, 245)
       doc.rect(margin, y - 4, 180, 7, 'F')
       doc.text('Ejercicio', margin + 2, y)
-      doc.text('Reps', margin + 110, y)
-      doc.text('Peso (kg)', margin + 135, y)
-      doc.text('Notas', margin + 160, y)
+      doc.text('Series', margin + 100, y)
+      doc.text('Reps', margin + 120, y)
+      doc.text('Peso (kg)', margin + 142, y)
+      doc.text('Notas', margin + 163, y)
       y += 6
 
       doc.setFont('helvetica', 'normal')
@@ -71,10 +72,11 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
         if (y > 270) { doc.addPage(); y = 20 }
         const grupo = grupoNombre(ej.ejercicio_id)
         const labelEj = grupo ? `${grupo} · ${nombreEjercicio(ej.ejercicio_id)}` : nombreEjercicio(ej.ejercicio_id)
-        doc.text(labelEj, margin + 2, y, { maxWidth: 105 })
-        doc.text(String(ej.repeticiones ?? '-'), margin + 110, y)
-        doc.text(ej.peso ? String(ej.peso) : '-', margin + 135, y)
-        doc.text(ej.notas || '', margin + 160, y, { maxWidth: 32 })
+        doc.text(labelEj, margin + 2, y, { maxWidth: 95 })
+        doc.text(ej.series ? String(ej.series) : '-', margin + 100, y)
+        doc.text(String(ej.repeticiones ?? '-'), margin + 120, y)
+        doc.text(ej.peso ? String(ej.peso) : '-', margin + 142, y)
+        doc.text(ej.notas || '', margin + 163, y, { maxWidth: 30 })
         y += 7
       }
       y += 4
@@ -149,6 +151,7 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
                   )}
                   <p className="font-semibold text-gray-900 text-sm">{nombreEjercicio(ej.ejercicio_id)}</p>
                   <div className="flex gap-4 mt-1 text-sm text-gray-500">
+                    {ej.series ? <span><span className="font-medium text-gray-700">{ej.series}</span> series</span> : null}
                     <span><span className="font-medium text-gray-700">{ej.repeticiones}</span> reps</span>
                     {ej.peso ? <span><span className="font-medium text-gray-700">{ej.peso}</span> kg</span> : null}
                   </div>

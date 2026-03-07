@@ -63,6 +63,7 @@ export default function RutinasPage() {
         alumno_id: rutina.alumno_id,
         ejercicios: rutina.ejercicios.map((e) => ({
           ejercicio_id: e.ejercicio_id,
+          series: e.series ?? 3,
           repeticiones: e.repeticiones,
           peso: e.peso || 0,
           dia: e.dia,
@@ -83,7 +84,7 @@ export default function RutinasPage() {
       ...prev,
       ejercicios: [
         ...prev.ejercicios,
-        { ejercicio_id: ejerciciosDisp[0]?.id || '', repeticiones: 12, peso: 0, dia, notas: '' },
+        { ejercicio_id: ejerciciosDisp[0]?.id || '', series: 3, repeticiones: 12, peso: 0, dia, notas: '' },
       ],
     }))
   }
@@ -118,6 +119,7 @@ export default function RutinasPage() {
         alumno_id: Number(form.alumno_id),
         ejercicios: form.ejercicios.map((ej) => ({
           ejercicio_id: Number(ej.ejercicio_id),
+          series: ej.series ?? 3,
           repeticiones: ej.repeticiones,
           peso: ej.peso || null,
           dia: ej.dia,
@@ -220,7 +222,7 @@ export default function RutinasPage() {
           </div>
         )}
 
-        <Modal open={modal} onClose={() => setModal(false)} title={editRutina ? 'Editar Rutina' : 'Nueva Rutina'}>
+        <Modal open={modal} onClose={() => setModal(false)} title={editRutina ? 'Editar Rutina' : 'Nueva Rutina'} size="lg">
           <form onSubmit={save} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre de la rutina</label>
@@ -327,7 +329,11 @@ export default function RutinasPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-400">Series</label>
+                        <input type="number" min="1" value={ej.series ?? 3} onChange={(e) => updateEjercicio(ej._index, 'series', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                      </div>
                       <div>
                         <label className="block text-xs text-gray-400">Reps</label>
                         <input type="number" min="1" value={ej.repeticiones} onChange={(e) => updateEjercicio(ej._index, 'repeticiones', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-1 focus:ring-indigo-500" />
