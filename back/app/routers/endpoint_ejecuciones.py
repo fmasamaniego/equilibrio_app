@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from typing import List, Optional
 from datetime import datetime, timedelta
 
@@ -122,39 +122,37 @@ def actividad_alumnos(
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):
     """Resumen de actividad de todos los alumnos activos."""
-    alumnos = db.query(Usuario).filter(Usuario.rol == "alumno", Usuario.activo == True).all()
-
     ahora = datetime.utcnow()
     inicio_semana = ahora - timedelta(days=7)
     inicio_mes = ahora - timedelta(days=30)
 
-    resultado = []
-    for alumno in alumnos:
-        ultima = (
-            db.query(func.max(EjecucionRutina.fecha))
-            .filter(EjecucionRutina.alumno_id == alumno.id)
-            .scalar()
+    # Una sola query con GROUP BY en lugar de 3 queries por alumno
+    rows = (
+        db.query(
+            Usuario.id,
+            Usuario.nombre,
+            Usuario.apellido,
+            func.max(EjecucionRutina.fecha).label("ultima_sesion"),
+            func.count(case((EjecucionRutina.fecha >= inicio_semana, 1))).label("sesiones_semana"),
+            func.count(case((EjecucionRutina.fecha >= inicio_mes, 1))).label("sesiones_mes"),
         )
-        semana = (
-            db.query(func.count(EjecucionRutina.id))
-            .filter(EjecucionRutina.alumno_id == alumno.id, EjecucionRutina.fecha >= inicio_semana)
-            .scalar()
-        )
-        mes = (
-            db.query(func.count(EjecucionRutina.id))
-            .filter(EjecucionRutina.alumno_id == alumno.id, EjecucionRutina.fecha >= inicio_mes)
-            .scalar()
-        )
-        resultado.append(ActividadAlumnoOut(
-            alumno_id=alumno.id,
-            nombre=alumno.nombre,
-            apellido=alumno.apellido,
-            ultima_sesion=ultima,
-            sesiones_semana=semana or 0,
-            sesiones_mes=mes or 0,
-        ))
+        .outerjoin(EjecucionRutina, EjecucionRutina.alumno_id == Usuario.id)
+        .filter(Usuario.rol == "alumno", Usuario.activo == True)
+        .group_by(Usuario.id, Usuario.nombre, Usuario.apellido)
+        .all()
+    )
 
-    return resultado
+    return [
+        ActividadAlumnoOut(
+            alumno_id=row.id,
+            nombre=row.nombre,
+            apellido=row.apellido,
+            ultima_sesion=row.ultima_sesion,
+            sesiones_semana=row.sesiones_semana or 0,
+            sesiones_mes=row.sesiones_mes or 0,
+        )
+        for row in rows
+    ]
 
 
 @router.get("/{ejecucion_id}", response_model=EjecucionRutinaOut)

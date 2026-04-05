@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
 from app.db.engine import get_db
@@ -113,11 +113,13 @@ def listar_asignaciones(
     if dia_semana is not None:
         query = query.filter(AsignacionFija.dia_semana == dia_semana)
 
-    asignaciones = query.all()
+    asignaciones = query.options(
+        joinedload(AsignacionFija.alumno),
+        joinedload(AsignacionFija.horario),
+    ).all()
 
-    resultado = []
-    for a in asignaciones:
-        resultado.append(AsignacionFijaConDetalles(
+    return [
+        AsignacionFijaConDetalles(
             id=a.id,
             alumno_id=a.alumno_id,
             horario_id=a.horario_id,
@@ -125,10 +127,10 @@ def listar_asignaciones(
             alumno_nombre=a.alumno.nombre,
             alumno_apellido=a.alumno.apellido,
             horario_inicio=a.horario.hora_inicio.strftime("%H:%M"),
-            horario_fin=a.horario.hora_fin.strftime("%H:%M")
-        ))
-
-    return resultado
+            horario_fin=a.horario.hora_fin.strftime("%H:%M"),
+        )
+        for a in asignaciones
+    ]
 
 
 @router.get("/alumno/{alumno_id}", response_model=List[AsignacionFijaConDetalles])
@@ -141,11 +143,15 @@ def obtener_asignaciones_alumno(
     if current_user.rol == "alumno" and current_user.id != alumno_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a estas asignaciones")
 
-    asignaciones = db.query(AsignacionFija).filter(AsignacionFija.alumno_id == alumno_id).all()
+    asignaciones = (
+        db.query(AsignacionFija)
+        .options(joinedload(AsignacionFija.alumno), joinedload(AsignacionFija.horario))
+        .filter(AsignacionFija.alumno_id == alumno_id)
+        .all()
+    )
 
-    resultado = []
-    for a in asignaciones:
-        resultado.append(AsignacionFijaConDetalles(
+    return [
+        AsignacionFijaConDetalles(
             id=a.id,
             alumno_id=a.alumno_id,
             horario_id=a.horario_id,
@@ -153,10 +159,10 @@ def obtener_asignaciones_alumno(
             alumno_nombre=a.alumno.nombre,
             alumno_apellido=a.alumno.apellido,
             horario_inicio=a.horario.hora_inicio.strftime("%H:%M"),
-            horario_fin=a.horario.hora_fin.strftime("%H:%M")
-        ))
-
-    return resultado
+            horario_fin=a.horario.hora_fin.strftime("%H:%M"),
+        )
+        for a in asignaciones
+    ]
 
 
 @router.delete("/{asignacion_id}", status_code=status.HTTP_204_NO_CONTENT)

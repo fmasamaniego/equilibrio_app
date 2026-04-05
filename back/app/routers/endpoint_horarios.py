@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func, and_
 from typing import List, Optional
 from datetime import date, timedelta
 
@@ -52,6 +53,23 @@ def obtener_disponibilidad(
     dia_semana = fecha.weekday()
 
     horarios = db.query(Horario).filter(Horario.activo == True).order_by(Horario.hora_inicio).all()
+    horario_ids = [h.id for h in horarios]
+
+    # Bulk count asignaciones fijas para todos los horarios del día
+    fijos_counts = dict(
+        db.query(AsignacionFija.horario_id, func.count(AsignacionFija.id))
+        .filter(AsignacionFija.horario_id.in_(horario_ids), AsignacionFija.dia_semana == dia_semana)
+        .group_by(AsignacionFija.horario_id)
+        .all()
+    )
+
+    # Bulk count reservas para todos los horarios de la fecha
+    reservas_counts = dict(
+        db.query(Reserva.horario_id, func.count(Reserva.id))
+        .filter(Reserva.horario_id.in_(horario_ids), Reserva.fecha == fecha, Reserva.estado != "cancelada")
+        .group_by(Reserva.horario_id)
+        .all()
+    )
 
     resultado = []
     for h in horarios:
@@ -59,18 +77,7 @@ def obtener_disponibilidad(
         if dia_semana not in dias:
             continue
 
-        fijos = db.query(AsignacionFija).filter(
-            AsignacionFija.horario_id == h.id,
-            AsignacionFija.dia_semana == dia_semana
-        ).count()
-
-        reservas = db.query(Reserva).filter(
-            Reserva.horario_id == h.id,
-            Reserva.fecha == fecha,
-            Reserva.estado != "cancelada"
-        ).count()
-
-        ocupados = fijos + reservas
+        ocupados = fijos_counts.get(h.id, 0) + reservas_counts.get(h.id, 0)
         disponibles = None if h.capacidad is None else max(0, h.capacidad - ocupados)
 
         resultado.append(HorarioConDisponibilidad(
@@ -82,7 +89,7 @@ def obtener_disponibilidad(
             activo=h.activo,
             dias_activos=dias,
             ocupados=ocupados,
-            disponibles=disponibles
+            disponibles=disponibles,
         ))
 
     return resultado
@@ -96,6 +103,34 @@ def obtener_disponibilidad_semanal(
 ):
     """Obtener disponibilidad de todos los horarios para una semana (Lun-Sab)."""
     horarios = db.query(Horario).filter(Horario.activo == True).order_by(Horario.hora_inicio).all()
+    horario_ids = [h.id for h in horarios]
+
+    fecha_fin = fecha_inicio + timedelta(days=5)
+
+    # Bulk count asignaciones fijas para toda la semana (agrupado por horario y día)
+    fijos_por_dia = {}
+    for horario_id, dia, count in (
+        db.query(AsignacionFija.horario_id, AsignacionFija.dia_semana, func.count(AsignacionFija.id))
+        .filter(AsignacionFija.horario_id.in_(horario_ids), AsignacionFija.dia_semana.in_(range(6)))
+        .group_by(AsignacionFija.horario_id, AsignacionFija.dia_semana)
+        .all()
+    ):
+        fijos_por_dia[(horario_id, dia)] = count
+
+    # Bulk count reservas para toda la semana (agrupado por horario y fecha)
+    reservas_por_fecha = {}
+    for horario_id, fecha_r, count in (
+        db.query(Reserva.horario_id, Reserva.fecha, func.count(Reserva.id))
+        .filter(
+            Reserva.horario_id.in_(horario_ids),
+            Reserva.fecha >= fecha_inicio,
+            Reserva.fecha <= fecha_fin,
+            Reserva.estado != "cancelada",
+        )
+        .group_by(Reserva.horario_id, Reserva.fecha)
+        .all()
+    ):
+        reservas_por_fecha[(horario_id, fecha_r)] = count
 
     resultado = []
     for i in range(6):  # Lun a Sab
@@ -108,18 +143,10 @@ def obtener_disponibilidad_semanal(
             if dia_semana not in dias:
                 continue
 
-            fijos = db.query(AsignacionFija).filter(
-                AsignacionFija.horario_id == h.id,
-                AsignacionFija.dia_semana == dia_semana
-            ).count()
-
-            reservas = db.query(Reserva).filter(
-                Reserva.horario_id == h.id,
-                Reserva.fecha == fecha,
-                Reserva.estado != "cancelada"
-            ).count()
-
-            ocupados = fijos + reservas
+            ocupados = (
+                fijos_por_dia.get((h.id, dia_semana), 0)
+                + reservas_por_fecha.get((h.id, fecha), 0)
+            )
             disponibles = None if h.capacidad is None else max(0, h.capacidad - ocupados)
 
             horarios_dia.append(HorarioConDisponibilidad(
@@ -131,7 +158,7 @@ def obtener_disponibilidad_semanal(
                 activo=h.activo,
                 dias_activos=dias,
                 ocupados=ocupados,
-                disponibles=disponibles
+                disponibles=disponibles,
             ))
 
         resultado.append(DisponibilidadSemanal(fecha=fecha, horarios=horarios_dia))

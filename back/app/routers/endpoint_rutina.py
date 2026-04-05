@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 
 from app.db.engine import get_db
@@ -107,7 +107,9 @@ def listar_rutinas(
     current_user: Usuario = Depends(get_current_user),
 ):
     """Lista rutinas. Alumnos solo ven las suyas; profesores/admin ven todas."""
-    query = db.query(Rutina)
+    query = db.query(Rutina).options(
+        selectinload(Rutina.ejercicios).selectinload(RutinaEjercicio.ejercicio)
+    )
 
     if current_user.rol == "alumno":
         query = query.filter(Rutina.alumno_id == current_user.id)
@@ -123,7 +125,12 @@ def obtener_rutina(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    rutina = db.query(Rutina).filter(Rutina.id == rutina_id).first()
+    rutina = (
+        db.query(Rutina)
+        .options(selectinload(Rutina.ejercicios).selectinload(RutinaEjercicio.ejercicio))
+        .filter(Rutina.id == rutina_id)
+        .first()
+    )
     if not rutina:
         raise HTTPException(status_code=404, detail="Rutina no encontrada")
 
@@ -167,6 +174,7 @@ def obtener_mi_rutina(
 
     rutina = (
         db.query(Rutina)
+        .options(selectinload(Rutina.ejercicios).selectinload(RutinaEjercicio.ejercicio))
         .filter(Rutina.alumno_id == current_user.id)
         .order_by(Rutina.id.desc())
         .first()

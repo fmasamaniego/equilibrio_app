@@ -7,7 +7,7 @@ class Rutina(Base):
     __tablename__ = "rutinas"
 
     id = Column(Integer, primary_key=True, index=True)
-    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
     nombre = Column(String, nullable=False)
 
     alumno = relationship("Usuario", back_populates="rutinas_asignadas")
@@ -19,7 +19,7 @@ class RutinaEjercicio(Base):
     __tablename__ = "rutina_ejercicios"
 
     id = Column(Integer, primary_key=True, index=True)
-    rutina_id = Column(Integer, ForeignKey("rutinas.id"), nullable=False)
+    rutina_id = Column(Integer, ForeignKey("rutinas.id"), nullable=False, index=True)
     ejercicio_id = Column(Integer, ForeignKey("ejercicios.id"), nullable=False)
     series = Column(Integer, nullable=False, server_default='3')
     repeticiones = Column(Integer, nullable=False)

@@ -8,8 +8,8 @@ class AsignacionFija(Base):
     __tablename__ = "asignaciones_fijas"
 
     id = Column(Integer, primary_key=True, index=True)
-    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    horario_id = Column(Integer, ForeignKey("horarios.id"), nullable=False)
+    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    horario_id = Column(Integer, ForeignKey("horarios.id"), nullable=False, index=True)
     dia_semana = Column(Integer, nullable=False)  # 0=Lunes, 6=Domingo
 
     __table_args__ = (

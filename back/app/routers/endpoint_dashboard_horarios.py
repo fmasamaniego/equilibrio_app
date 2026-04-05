@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 from typing import List
 from datetime import date, datetime
@@ -37,25 +37,39 @@ def buscar_alumnos(
 
     resultado = []
     hoy = date.today()
+    alumno_ids = [a.id for a in alumnos]
+
+    # Bulk load en lugar de N queries individuales
+    asignaciones_ids = {
+        af.alumno_id
+        for af in db.query(AsignacionFija.alumno_id)
+        .filter(AsignacionFija.alumno_id.in_(alumno_ids))
+        .distinct()
+        .all()
+    }
+
+    proximas_map: dict = {}
+    for r in (
+        db.query(Reserva.alumno_id, Reserva.fecha)
+        .filter(
+            Reserva.alumno_id.in_(alumno_ids),
+            Reserva.fecha >= hoy,
+            Reserva.estado == "confirmada",
+        )
+        .order_by(Reserva.alumno_id, Reserva.fecha)
+        .all()
+    ):
+        if r.alumno_id not in proximas_map:
+            proximas_map[r.alumno_id] = r.fecha
 
     for alumno in alumnos:
-        tiene_fijo = db.query(AsignacionFija).filter(
-            AsignacionFija.alumno_id == alumno.id
-        ).first() is not None
-
-        proxima = db.query(Reserva.fecha).filter(
-            Reserva.alumno_id == alumno.id,
-            Reserva.fecha >= hoy,
-            Reserva.estado == "confirmada"
-        ).order_by(Reserva.fecha).first()
-
         resultado.append(AlumnoBusquedaOut(
             id=alumno.id,
             nombre=alumno.nombre,
             apellido=alumno.apellido,
             activo=alumno.activo,
-            tiene_horario_fijo=tiene_fijo,
-            proxima_reserva=proxima[0] if proxima else None
+            tiene_horario_fijo=alumno.id in asignaciones_ids,
+            proxima_reserva=proximas_map.get(alumno.id),
         ))
 
     return resultado
@@ -89,17 +103,20 @@ def quien_viene_ahora(
         raise HTTPException(status_code=404, detail="No hay horarios disponibles")
 
     # Obtener alumnos con asignacion fija
-    fijos = db.query(AsignacionFija).filter(
-        AsignacionFija.horario_id == horario_actual.id,
-        AsignacionFija.dia_semana == dia_semana
-    ).all()
+    fijos = (
+        db.query(AsignacionFija)
+        .options(joinedload(AsignacionFija.alumno))
+        .filter(AsignacionFija.horario_id == horario_actual.id, AsignacionFija.dia_semana == dia_semana)
+        .all()
+    )
 
     # Obtener reservas para hoy
-    reservas = db.query(Reserva).filter(
-        Reserva.horario_id == horario_actual.id,
-        Reserva.fecha == hoy,
-        Reserva.estado != "cancelada"
-    ).all()
+    reservas = (
+        db.query(Reserva)
+        .options(joinedload(Reserva.alumno))
+        .filter(Reserva.horario_id == horario_actual.id, Reserva.fecha == hoy, Reserva.estado != "cancelada")
+        .all()
+    )
 
     alumnos = []
     alumnos_ids = set()
@@ -151,24 +168,35 @@ def alumnos_en_horario(
 
     dia_semana = fecha.weekday()
 
-    fijos = db.query(AsignacionFija).filter(
-        AsignacionFija.horario_id == horario_id,
-        AsignacionFija.dia_semana == dia_semana
-    ).all()
+    fijos = (
+        db.query(AsignacionFija)
+        .options(joinedload(AsignacionFija.alumno))
+        .filter(AsignacionFija.horario_id == horario_id, AsignacionFija.dia_semana == dia_semana)
+        .all()
+    )
 
-    reservas = db.query(Reserva).filter(
-        Reserva.horario_id == horario_id,
-        Reserva.fecha == fecha,
-        Reserva.estado != "cancelada"
-    ).all()
+    reservas = (
+        db.query(Reserva)
+        .options(joinedload(Reserva.alumno))
+        .filter(Reserva.horario_id == horario_id, Reserva.fecha == fecha, Reserva.estado != "cancelada")
+        .all()
+    )
+
+    # Bulk load rutinas para todos los alumnos involucrados
+    todos_alumno_ids = {f.alumno_id for f in fijos} | {r.alumno_id for r in reservas}
+    rutinas_map = {
+        r.alumno_id: r.id
+        for r in db.query(Rutina.alumno_id, Rutina.id)
+        .filter(Rutina.alumno_id.in_(todos_alumno_ids))
+        .all()
+    }
 
     alumnos = []
-    alumnos_ids = set()
+    alumnos_ids: set = set()
 
     for f in fijos:
         if f.alumno_id not in alumnos_ids:
             alumnos_ids.add(f.alumno_id)
-            rutina = db.query(Rutina).filter(Rutina.alumno_id == f.alumno_id).first()
             alumnos.append(AlumnoEnHorarioOut(
                 alumno_id=f.alumno_id,
                 nombre=f.alumno.nombre,
@@ -176,13 +204,12 @@ def alumnos_en_horario(
                 tipo="fijo",
                 estado=None,
                 asignacion_id=f.id,
-                rutina_id=rutina.id if rutina else None
+                rutina_id=rutinas_map.get(f.alumno_id),
             ))
 
     for r in reservas:
         if r.alumno_id not in alumnos_ids:
             alumnos_ids.add(r.alumno_id)
-            rutina = db.query(Rutina).filter(Rutina.alumno_id == r.alumno_id).first()
             alumnos.append(AlumnoEnHorarioOut(
                 alumno_id=r.alumno_id,
                 nombre=r.alumno.nombre,
@@ -190,7 +217,7 @@ def alumnos_en_horario(
                 tipo="reserva",
                 estado=r.estado,
                 reserva_id=r.id,
-                rutina_id=rutina.id if rutina else None
+                rutina_id=rutinas_map.get(r.alumno_id),
             ))
 
     return alumnos

@@ -10,9 +10,9 @@ class EjecucionRutina(Base):
     __tablename__ = "ejecuciones_rutina"
 
     id = Column(Integer, primary_key=True, index=True)
-    rutina_id = Column(Integer, ForeignKey("rutinas.id"), nullable=False)
-    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    fecha = Column(DateTime, default=datetime.utcnow, nullable=False)
+    rutina_id = Column(Integer, ForeignKey("rutinas.id"), nullable=False, index=True)
+    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    fecha = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     dia = Column(Integer, nullable=False)  # Which day of the routine was performed
     notas = Column(String, nullable=True)
     completada = Column(Boolean, default=False, nullable=False)

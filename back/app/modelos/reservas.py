@@ -9,9 +9,9 @@ class Reserva(Base):
     __tablename__ = "reservas"
 
     id = Column(Integer, primary_key=True, index=True)
-    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    horario_id = Column(Integer, ForeignKey("horarios.id"), nullable=False)
-    fecha = Column(Date, nullable=False)
+    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    horario_id = Column(Integer, ForeignKey("horarios.id"), nullable=False, index=True)
+    fecha = Column(Date, nullable=False, index=True)
     estado = Column(String(20), default="confirmada", nullable=False)
     notas = Column(String, nullable=True)
     creado_en = Column(DateTime, default=datetime.utcnow, nullable=False)

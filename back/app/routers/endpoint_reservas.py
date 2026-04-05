@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
 
@@ -140,11 +140,15 @@ def listar_mis_reservas(
     if hasta:
         query = query.filter(Reserva.fecha <= hasta)
 
-    reservas = query.order_by(Reserva.fecha.desc()).all()
+    reservas = (
+        query
+        .options(joinedload(Reserva.alumno), joinedload(Reserva.horario))
+        .order_by(Reserva.fecha.desc())
+        .all()
+    )
 
-    resultado = []
-    for r in reservas:
-        resultado.append(ReservaConDetalles(
+    return [
+        ReservaConDetalles(
             id=r.id,
             alumno_id=r.alumno_id,
             horario_id=r.horario_id,
@@ -155,10 +159,10 @@ def listar_mis_reservas(
             alumno_nombre=r.alumno.nombre,
             alumno_apellido=r.alumno.apellido,
             horario_inicio=r.horario.hora_inicio.strftime("%H:%M"),
-            horario_fin=r.horario.hora_fin.strftime("%H:%M")
-        ))
-
-    return resultado
+            horario_fin=r.horario.hora_fin.strftime("%H:%M"),
+        )
+        for r in reservas
+    ]
 
 
 @router.get("/", response_model=List[ReservaConDetalles])
@@ -182,11 +186,15 @@ def listar_reservas(
     if estado:
         query = query.filter(Reserva.estado == estado)
 
-    reservas = query.order_by(Reserva.fecha.desc()).all()
+    reservas = (
+        query
+        .options(joinedload(Reserva.alumno), joinedload(Reserva.horario))
+        .order_by(Reserva.fecha.desc())
+        .all()
+    )
 
-    resultado = []
-    for r in reservas:
-        resultado.append(ReservaConDetalles(
+    return [
+        ReservaConDetalles(
             id=r.id,
             alumno_id=r.alumno_id,
             horario_id=r.horario_id,
@@ -197,10 +205,10 @@ def listar_reservas(
             alumno_nombre=r.alumno.nombre,
             alumno_apellido=r.alumno.apellido,
             horario_inicio=r.horario.hora_inicio.strftime("%H:%M"),
-            horario_fin=r.horario.hora_fin.strftime("%H:%M")
-        ))
-
-    return resultado
+            horario_fin=r.horario.hora_fin.strftime("%H:%M"),
+        )
+        for r in reservas
+    ]
 
 
 @router.patch("/{reserva_id}", response_model=ReservaOut)
