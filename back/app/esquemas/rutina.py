@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 
 class RutinaEjercicioBase(BaseModel):
@@ -34,6 +35,7 @@ class RutinaCreate(RutinaBase):
 
 class RutinaOut(RutinaBase):
     id: int
+    creado_en: Optional[datetime] = None
     ejercicios: List[RutinaEjercicioOut] = []
 
     class Config:

@@ -6,6 +6,11 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
 
   if (!rutina) return null
 
+  const formatFecha = (iso) => {
+    if (!iso) return null
+    return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
   const dias = [...new Set(rutina.ejercicios.map((e) => e.dia))].sort((a, b) => a - b)
   const currentDay = dias.includes(activeDay) ? activeDay : dias[0]
   const ejerciciosDelDia = rutina.ejercicios.filter((e) => e.dia === currentDay)
@@ -40,7 +45,12 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
       margin,
       y,
     )
-    y += 10
+    y += 6
+    if (rutina.creado_en) {
+      doc.text(`Asignada el ${formatFecha(rutina.creado_en)}`, margin, y)
+      y += 6
+    }
+    y += 4
     doc.setTextColor(0)
 
     for (const dia of dias) {
@@ -100,6 +110,9 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
           <div className="min-w-0 flex-1 mr-4">
             <p className="font-bold text-gray-900 text-xl truncate">{rutina.nombre}</p>
             <p className="text-sm text-gray-500 mt-0.5 truncate">{alumnoNombre}</p>
+            {rutina.creado_en && (
+              <p className="text-xs text-gray-400 mt-0.5">Asignada el {formatFecha(rutina.creado_en)}</p>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button

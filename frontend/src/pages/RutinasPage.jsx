@@ -162,6 +162,11 @@ export default function RutinasPage() {
 
   const grupoNombre = (id) => grupos.find((g) => g.id === id)?.nombre || ''
 
+  const formatFecha = (iso) => {
+    if (!iso) return null
+    return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
   const dias = [...new Set(form.ejercicios.map(e => e.dia))].sort((a, b) => a - b)
   if (dias.length === 0) dias.push(1)
   const maxDay = Math.max(...dias, 0)
@@ -210,6 +215,9 @@ export default function RutinasPage() {
                     <p className="text-sm text-gray-500">
                       {alumnoNombre(r.alumno_id)} · {r.ejercicios.length} ejercicios · {[...new Set(r.ejercicios.map((e) => e.dia))].length} dias
                     </p>
+                    {r.creado_en && (
+                      <p className="text-xs text-gray-400 mt-0.5">Desde {formatFecha(r.creado_en)}</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button onClick={(e) => { e.stopPropagation(); openModal(r) }} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">Editar</button>
