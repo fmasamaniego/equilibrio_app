@@ -47,3 +47,16 @@ class RutinaOut(RutinaBase):
 class RutinaDuplicar(BaseModel):
     alumno_id: int
     nombre: Optional[str] = None
+
+
+class RutinaAsignarProfesor(BaseModel):
+    """Body para PATCH /rutinas/{id}/profesor. Un admin puede mandar cualquier profesor_id
+    (o None para desasignar); un profesor que llama este endpoint solo puede reclamar
+    rutinas sin dueño, y el body se ignora (se fuerza a sí mismo)."""
+    profesor_id: Optional[int] = None
+
+
+class RutinaAsignarProfesorBulk(BaseModel):
+    """Body para POST /rutinas/asignar-profesor-bulk (solo admin)."""
+    rutina_ids: List[int]
+    profesor_id: Optional[int] = None

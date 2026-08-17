@@ -6,9 +6,16 @@ from app.db.engine import get_db
 from app.modelos.usuarios import Usuario
 from app.modelos.rutinas import Rutina, RutinaEjercicio
 from app.modelos.ejercicios import Ejercicio
-from app.esquemas.rutina import RutinaCreate, RutinaOut, RutinaEjercicioOut, RutinaDuplicar
+from app.esquemas.rutina import (
+    RutinaCreate,
+    RutinaOut,
+    RutinaEjercicioOut,
+    RutinaDuplicar,
+    RutinaAsignarProfesor,
+    RutinaAsignarProfesorBulk,
+)
 from app.auth.auth import get_current_user
-from app.auth.deps import require_profesor_or_admin
+from app.auth.deps import require_profesor_or_admin, require_admin
 
 router = APIRouter(prefix="/rutinas", tags=["Rutinas"])
 
@@ -112,10 +119,44 @@ def actualizar_rutina(
     return rutina
 
 
+@router.patch("/{rutina_id}/profesor", response_model=RutinaOut)
+def asignar_profesor(
+    rutina_id: int,
+    datos: RutinaAsignarProfesor,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_profesor_or_admin),
+):
+    """Asigna un profesor a una rutina existente (para rutinas históricas sin dueño).
+
+    Un profesor solo puede reclamar rutinas que todavía no tienen profesor asignado,
+    y siempre para sí mismo (el body se ignora). Un admin puede asignar cualquier
+    profesor_id válido a cualquier rutina, incluso reasignar una ya asignada.
+    """
+    rutina = db.query(Rutina).filter(Rutina.id == rutina_id).first()
+    if not rutina:
+        raise HTTPException(status_code=404, detail="Rutina no encontrada")
+
+    if current_user.rol == "profesor":
+        if rutina.profesor_id is not None:
+            raise HTTPException(status_code=403, detail="Esta rutina ya tiene un profesor asignado")
+        rutina.profesor_id = current_user.id
+    else:
+        if datos.profesor_id is not None:
+            profesor = db.query(Usuario).filter(Usuario.id == datos.profesor_id).first()
+            if not profesor or profesor.rol != "profesor":
+                raise HTTPException(status_code=400, detail="Profesor no válido")
+        rutina.profesor_id = datos.profesor_id
+
+    db.commit()
+    db.refresh(rutina)
+    return rutina
+
+
 @router.get("/", response_model=List[RutinaOut])
 def listar_rutinas(
     alumno_id: Optional[int] = Query(None, description="Filtrar por alumno"),
     profesor_id: Optional[int] = Query(None, description="Filtrar por profesor creador"),
+    sin_profesor: Optional[bool] = Query(None, description="Si es true, solo rutinas sin profesor asignado"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -133,8 +174,35 @@ def listar_rutinas(
             query = query.filter(Rutina.alumno_id == alumno_id)
         if profesor_id:
             query = query.filter(Rutina.profesor_id == profesor_id)
+        if sin_profesor:
+            query = query.filter(Rutina.profesor_id.is_(None))
 
     return query.offset(skip).limit(limit).all()
+
+
+@router.post("/asignar-profesor-bulk")
+def asignar_profesor_bulk(
+    datos: RutinaAsignarProfesorBulk,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_admin),
+):
+    """Asigna (o desasigna, con profesor_id=null) un profesor a varias rutinas de una vez.
+    Pensado para poner al día el historial de rutinas creadas antes de que existiera profesor_id."""
+    if datos.profesor_id is not None:
+        profesor = db.query(Usuario).filter(Usuario.id == datos.profesor_id).first()
+        if not profesor or profesor.rol != "profesor":
+            raise HTTPException(status_code=400, detail="Profesor no válido")
+
+    if not datos.rutina_ids:
+        return {"actualizadas": 0}
+
+    actualizadas = (
+        db.query(Rutina)
+        .filter(Rutina.id.in_(datos.rutina_ids))
+        .update({Rutina.profesor_id: datos.profesor_id}, synchronize_session=False)
+    )
+    db.commit()
+    return {"actualizadas": actualizadas}
 
 
 @router.get("/{rutina_id}", response_model=RutinaOut)
