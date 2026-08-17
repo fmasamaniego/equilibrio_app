@@ -26,15 +26,17 @@ class RutinaEjercicioOut(RutinaEjercicioBase):
 
 class RutinaBase(BaseModel):
     nombre: str
-    alumno_id: int
+    alumno_id: Optional[int] = None  # None = plantilla sin alumno asignado todavía
 
 
 class RutinaCreate(RutinaBase):
+    profesor_id: Optional[int] = None  # solo lo puede fijar un admin; si crea un profesor, se ignora
     ejercicios: List[RutinaEjercicioCreate]
 
 
 class RutinaOut(RutinaBase):
     id: int
+    profesor_id: Optional[int] = None
     creado_en: Optional[datetime] = None
     ejercicios: List[RutinaEjercicioOut] = []
 

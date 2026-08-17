@@ -14,6 +14,7 @@ import {
   BoltIcon,
   ChartBarIcon,
   ArrowDownTrayIcon,
+  BriefcaseIcon,
 } from '../components/ui/Icon'
 
 function AlumnoDashboard() {
@@ -202,6 +203,13 @@ function ProfesorDashboard() {
       <div className="mb-6">
         <QuienVieneAhora />
       </div>
+      <Link
+        to="/mi-area"
+        className="mb-6 bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-150 flex items-center gap-3 text-base font-medium text-gray-900"
+      >
+        <BriefcaseIcon className="w-5 h-5 text-indigo-600" />
+        Ir a Mi área
+      </Link>
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Mis Alumnos</h2>
       {actividad.length === 0 ? (
         <p className="text-gray-500 text-sm">No hay alumnos registrados</p>

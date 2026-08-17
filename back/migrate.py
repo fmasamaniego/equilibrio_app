@@ -47,6 +47,14 @@ def migrate():
         # ── Migración 4: series en rutina_ejercicios ──────────────────────────
         ("rutina_ejercicios.series",
          "ALTER TABLE rutina_ejercicios ADD COLUMN IF NOT EXISTS series INTEGER NOT NULL DEFAULT 3"),
+
+        # ── Migración 5: profesor_id en rutinas + alumno_id nullable (plantillas) ──
+        ("rutinas.profesor_id",
+         "ALTER TABLE rutinas ADD COLUMN IF NOT EXISTS profesor_id INTEGER REFERENCES usuarios(id)"),
+        ("rutinas.profesor_id (index)",
+         "CREATE INDEX IF NOT EXISTS ix_rutinas_profesor_id ON rutinas (profesor_id)"),
+        ("rutinas.alumno_id (nullable)",
+         "ALTER TABLE rutinas ALTER COLUMN alumno_id DROP NOT NULL"),
     ]
 
     with engine.connect() as conn:

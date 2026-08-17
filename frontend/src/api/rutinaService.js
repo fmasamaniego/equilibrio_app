@@ -1,8 +1,9 @@
 import client from './client'
 
-export async function listar({ alumno_id, skip = 0, limit = 100 } = {}) {
+export async function listar({ alumno_id, profesor_id, skip = 0, limit = 100 } = {}) {
   const params = { skip, limit }
   if (alumno_id) params.alumno_id = alumno_id
+  if (profesor_id) params.profesor_id = profesor_id
   const { data } = await client.get('/rutinas/', { params })
   return data
 }

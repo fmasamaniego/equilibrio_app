@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage'
 import WorkoutPage from './pages/WorkoutPage'
 import ProgressPage from './pages/ProgressPage'
 import RutinasPage from './pages/RutinasPage'
+import MiAreaPage from './pages/MiAreaPage'
 import EjerciciosPage from './pages/EjerciciosPage'
 import UsuariosPage from './pages/UsuariosPage'
 import HorariosPage from './pages/HorariosPage'
@@ -43,6 +44,12 @@ export default function App() {
           <Route path="rutinas" element={
             <RoleGuard roles={['admin', 'profesor']}>
               <RutinasPage />
+            </RoleGuard>
+          } />
+
+          <Route path="mi-area" element={
+            <RoleGuard roles={['profesor']}>
+              <MiAreaPage />
             </RoleGuard>
           } />
 

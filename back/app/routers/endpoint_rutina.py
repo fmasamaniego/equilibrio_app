@@ -19,10 +19,22 @@ def crear_rutina(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):
-    """Solo profesor o admin pueden crear rutinas."""
-    alumno = db.query(Usuario).filter(Usuario.id == rutina.alumno_id).first()
-    if not alumno or alumno.rol != "alumno":
-        raise HTTPException(status_code=400, detail="Alumno no válido")
+    """Solo profesor o admin pueden crear rutinas. alumno_id es opcional (rutina "plantilla")."""
+    if rutina.alumno_id is not None:
+        alumno = db.query(Usuario).filter(Usuario.id == rutina.alumno_id).first()
+        if not alumno or alumno.rol != "alumno":
+            raise HTTPException(status_code=400, detail="Alumno no válido")
+
+    if current_user.rol == "profesor":
+        # El profesor no puede atribuirse la rutina a otro: se fuerza al creador real.
+        profesor_id = current_user.id
+    else:
+        profesor_id = None
+        if rutina.profesor_id is not None:
+            profesor = db.query(Usuario).filter(Usuario.id == rutina.profesor_id).first()
+            if not profesor or profesor.rol != "profesor":
+                raise HTTPException(status_code=400, detail="Profesor no válido")
+            profesor_id = rutina.profesor_id
 
     for ej in rutina.ejercicios:
         ejercicio = db.query(Ejercicio).filter(Ejercicio.id == ej.ejercicio_id).first()
@@ -32,7 +44,7 @@ def crear_rutina(
                 detail=f"Ejercicio con id {ej.ejercicio_id} no existe",
             )
 
-    nueva_rutina = Rutina(nombre=rutina.nombre, alumno_id=rutina.alumno_id)
+    nueva_rutina = Rutina(nombre=rutina.nombre, alumno_id=rutina.alumno_id, profesor_id=profesor_id)
     db.add(nueva_rutina)
     db.flush()
 
@@ -59,14 +71,16 @@ def actualizar_rutina(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_profesor_or_admin),
 ):
-    """Actualiza nombre y reemplaza los ejercicios de la rutina."""
+    """Actualiza nombre y reemplaza los ejercicios de la rutina. alumno_id opcional (permite
+    dejarla como plantilla o asignarle un alumno). No modifica profesor_id (creador original)."""
     rutina = db.query(Rutina).filter(Rutina.id == rutina_id).first()
     if not rutina:
         raise HTTPException(status_code=404, detail="Rutina no encontrada")
 
-    alumno = db.query(Usuario).filter(Usuario.id == rutina_data.alumno_id).first()
-    if not alumno or alumno.rol != "alumno":
-        raise HTTPException(status_code=400, detail="Alumno no válido")
+    if rutina_data.alumno_id is not None:
+        alumno = db.query(Usuario).filter(Usuario.id == rutina_data.alumno_id).first()
+        if not alumno or alumno.rol != "alumno":
+            raise HTTPException(status_code=400, detail="Alumno no válido")
 
     for ej in rutina_data.ejercicios:
         ejercicio = db.query(Ejercicio).filter(Ejercicio.id == ej.ejercicio_id).first()
@@ -101,20 +115,24 @@ def actualizar_rutina(
 @router.get("/", response_model=List[RutinaOut])
 def listar_rutinas(
     alumno_id: Optional[int] = Query(None, description="Filtrar por alumno"),
+    profesor_id: Optional[int] = Query(None, description="Filtrar por profesor creador"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Lista rutinas. Alumnos solo ven las suyas; profesores/admin ven todas."""
+    """Lista rutinas. Alumnos solo ven las suyas; profesores/admin ven todas (con filtros opcionales)."""
     query = db.query(Rutina).options(
         selectinload(Rutina.ejercicios).selectinload(RutinaEjercicio.ejercicio)
     )
 
     if current_user.rol == "alumno":
         query = query.filter(Rutina.alumno_id == current_user.id)
-    elif alumno_id:
-        query = query.filter(Rutina.alumno_id == alumno_id)
+    else:
+        if alumno_id:
+            query = query.filter(Rutina.alumno_id == alumno_id)
+        if profesor_id:
+            query = query.filter(Rutina.profesor_id == profesor_id)
 
     return query.offset(skip).limit(limit).all()
 
@@ -202,7 +220,11 @@ def duplicar_rutina(
 
     nombre = datos.nombre or f"{rutina_original.nombre} (copia)"
 
-    nueva_rutina = Rutina(nombre=nombre, alumno_id=datos.alumno_id)
+    # El profesor que duplica queda como creador de la copia; si duplica un admin,
+    # se conserva la atribución original.
+    profesor_id = current_user.id if current_user.rol == "profesor" else rutina_original.profesor_id
+
+    nueva_rutina = Rutina(nombre=nombre, alumno_id=datos.alumno_id, profesor_id=profesor_id)
     db.add(nueva_rutina)
     db.flush()
 

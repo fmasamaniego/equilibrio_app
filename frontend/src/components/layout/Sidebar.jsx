@@ -9,6 +9,7 @@ import {
   ClockIcon,
   AcademicCapIcon,
   UserGroupIcon,
+  BriefcaseIcon,
 } from '../ui/Icon'
 
 const navItems = {
@@ -21,6 +22,7 @@ const navItems = {
   ],
   profesor: [
     { to: '/', label: 'Inicio', Icon: HomeIcon },
+    { to: '/mi-area', label: 'Mi área', Icon: BriefcaseIcon },
     { to: '/rutinas', label: 'Rutinas', Icon: ClipboardDocumentListIcon },
     { to: '/horarios', label: 'Horarios', Icon: ClockIcon },
     { to: '/ejercicios', label: 'Ejercicios', Icon: AcademicCapIcon },

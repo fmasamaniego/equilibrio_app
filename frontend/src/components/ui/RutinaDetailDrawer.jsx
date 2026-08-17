@@ -38,7 +38,7 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100)
-    doc.text(`Alumno: ${alumnoNombre}`, margin, y)
+    doc.text(`Alumno: ${alumnoNombre || 'Plantilla sin alumno asignado'}`, margin, y)
     y += 6
     doc.text(
       `${dias.length} dia${dias.length !== 1 ? 's' : ''} · ${rutina.ejercicios.length} ejercicio${rutina.ejercicios.length !== 1 ? 's' : ''}`,
@@ -109,7 +109,7 @@ export default function RutinaDetailDrawer({ rutina, alumnoNombre, ejerciciosDis
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="min-w-0 flex-1 mr-4">
             <p className="font-bold text-gray-900 text-xl truncate">{rutina.nombre}</p>
-            <p className="text-sm text-gray-500 mt-0.5 truncate">{alumnoNombre}</p>
+            <p className="text-sm text-gray-500 mt-0.5 truncate">{alumnoNombre || 'Plantilla sin alumno asignado'}</p>
             {rutina.creado_en && (
               <p className="text-xs text-gray-400 mt-0.5">Asignada el {formatFecha(rutina.creado_en)}</p>
             )}

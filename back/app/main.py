@@ -27,6 +27,7 @@ from app.routers import endpoint_horarios as horarios
 from app.routers import endpoint_asignaciones as asignaciones
 from app.routers import endpoint_reservas as reservas
 from app.routers import endpoint_dashboard_horarios as dashboard_horarios
+from app.routers import endpoint_mi_area as mi_area
 
 app = FastAPI(
     title="Sistema de Rutinas de Gimnasio",
@@ -80,3 +81,4 @@ app.include_router(horarios.router)
 app.include_router(asignaciones.router)
 app.include_router(reservas.router)
 app.include_router(dashboard_horarios.router)
+app.include_router(mi_area.router)

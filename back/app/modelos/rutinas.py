@@ -8,11 +8,13 @@ class Rutina(Base):
     __tablename__ = "rutinas"
 
     id = Column(Integer, primary_key=True, index=True)
-    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    alumno_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    profesor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
     nombre = Column(String, nullable=False)
     creado_en = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    alumno = relationship("Usuario", back_populates="rutinas_asignadas")
+    alumno = relationship("Usuario", foreign_keys=[alumno_id], back_populates="rutinas_asignadas")
+    profesor = relationship("Usuario", foreign_keys=[profesor_id], back_populates="rutinas_creadas")
     ejercicios = relationship("RutinaEjercicio", back_populates="rutina", cascade="all, delete-orphan")
     historial = relationship("HistorialRutina", back_populates="rutina", cascade="all, delete-orphan")
 

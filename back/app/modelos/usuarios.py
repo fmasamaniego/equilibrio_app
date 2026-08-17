@@ -17,7 +17,8 @@ class Usuario(Base):
     email = Column(String, nullable=True, unique=True)
     recibir_notificaciones = Column(Boolean, server_default="false", nullable=False)
 
-    rutinas_asignadas = relationship("Rutina", back_populates="alumno")
+    rutinas_asignadas = relationship("Rutina", foreign_keys="Rutina.alumno_id", back_populates="alumno")
+    rutinas_creadas = relationship("Rutina", foreign_keys="Rutina.profesor_id", back_populates="profesor")
     historial_rutinas = relationship("HistorialRutina", back_populates="alumno")
     asignaciones_fijas = relationship("AsignacionFija", back_populates="alumno", cascade="all, delete-orphan")
     reservas = relationship("Reserva", back_populates="alumno", cascade="all, delete-orphan")

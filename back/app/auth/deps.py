@@ -37,3 +37,12 @@ def require_profesor_or_admin(current_user: Usuario = Depends(get_current_user))
             detail="Se requiere rol de profesor o administrador",
         )
     return current_user
+
+
+def require_profesor(current_user: Usuario = Depends(get_current_user)) -> Usuario:
+    if current_user.rol != "profesor":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de profesor",
+        )
+    return current_user
