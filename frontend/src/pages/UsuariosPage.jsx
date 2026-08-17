@@ -27,6 +27,8 @@ export default function UsuariosPage() {
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
   const [deleteId, setDeleteId] = useState(null)
+  const [editUser, setEditUser] = useState(null)
+  const [editForm, setEditForm] = useState({ nombre: '', apellido: '', rol: 'alumno', observaciones: '' })
 
   const fetchUsuarios = async () => {
     setLoading(true)
@@ -82,6 +84,28 @@ export default function UsuariosPage() {
       setForm({ usuario: '', nombre: '', apellido: '', password: '', rol: 'alumno' })
       fetchUsuarios()
     } catch { showToast('Error creando usuario', 'error') }
+  }
+
+  const openEdit = (u) => {
+    setEditUser(u)
+    setEditForm({
+      nombre: u.nombre || '',
+      apellido: u.apellido || '',
+      rol: u.rol,
+      observaciones: u.observaciones || '',
+    })
+  }
+
+  const handleEditSave = async (e) => {
+    e.preventDefault()
+    try {
+      await usuarioService.actualizar(editUser.id, editForm)
+      showToast('Usuario actualizado')
+      setEditUser(null)
+      fetchUsuarios()
+    } catch (err) {
+      showToast(err.response?.data?.detail || 'Error actualizando usuario', 'error')
+    }
   }
 
   const toggleActivo = async (u) => {
@@ -159,15 +183,20 @@ export default function UsuariosPage() {
                 </span>
               </div>
             </div>
-            {isAdmin && u.id !== currentUser.id && (
+            {isAdmin && (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleActivo(u)}
-                  className={`text-sm px-2 py-1 rounded-lg ${u.activo ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-                >
-                  {u.activo ? 'Desactivar' : 'Activar'}
-                </button>
-                <button onClick={() => setDeleteId(u.id)} className="text-sm text-red-600 hover:text-red-800">Eliminar</button>
+                <button onClick={() => openEdit(u)} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Editar</button>
+                {u.id !== currentUser.id && (
+                  <>
+                    <button
+                      onClick={() => toggleActivo(u)}
+                      className={`text-sm px-2 py-1 rounded-lg ${u.activo ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                    >
+                      {u.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                    <button onClick={() => setDeleteId(u.id)} className="text-sm text-red-600 hover:text-red-800">Eliminar</button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -280,6 +309,59 @@ export default function UsuariosPage() {
             </select>
           </div>
           <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg text-base font-medium hover:bg-indigo-700">Crear Usuario</button>
+        </form>
+      </Modal>
+
+      {/* Modal editar */}
+      <Modal open={!!editUser} onClose={() => setEditUser(null)} title={`Editar ${editUser?.nombre || ''}`}>
+        <form onSubmit={handleEditSave} className="space-y-3">
+          <p className="text-sm text-gray-400">@{editUser?.usuario}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-1">Nombre</label>
+              <input
+                value={editForm.nombre}
+                onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+                required
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-1">Apellido</label>
+              <input
+                value={editForm.apellido}
+                onChange={(e) => setEditForm({ ...editForm, apellido: e.target.value })}
+                required
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-1">Rol</label>
+            <select
+              value={editForm.rol}
+              onChange={(e) => setEditForm({ ...editForm, rol: e.target.value })}
+              disabled={editUser?.id === currentUser.id}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
+            >
+              <option value="alumno">Alumno</option>
+              <option value="profesor">Profesor</option>
+              <option value="admin">Admin</option>
+            </select>
+            {editUser?.id === currentUser.id && (
+              <p className="text-xs text-gray-400 mt-1">No podés cambiar tu propio rol.</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-1">Observaciones</label>
+            <textarea
+              value={editForm.observaciones}
+              onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg text-base font-medium hover:bg-indigo-700">Guardar Cambios</button>
         </form>
       </Modal>
 
