@@ -247,17 +247,12 @@ function ProfesorDashboard() {
 }
 
 function AdminDashboard() {
-  const [stats, setStats] = useState({ alumnos: 0, profesores: 0 })
+  const [profesores, setProfesores] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      listarUsuarios({ rol: 'alumno', activo: true }),
-      listarUsuarios({ rol: 'profesor', activo: true }),
-    ])
-      .then(([alumnos, profesores]) =>
-        setStats({ alumnos: alumnos.length, profesores: profesores.length })
-      )
+    listarUsuarios({ rol: 'profesor', activo: true })
+      .then((data) => setProfesores(data.length))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -270,13 +265,9 @@ function AdminDashboard() {
         <QuienVieneAhora />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Panel de Administracion</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-3xl font-bold text-indigo-600">{stats.alumnos}</p>
-          <p className="text-sm text-gray-500">Alumnos activos</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-3xl font-bold text-blue-600">{stats.profesores}</p>
+          <p className="text-3xl font-bold text-blue-600">{profesores}</p>
           <p className="text-sm text-gray-500">Profesores</p>
         </div>
       </div>

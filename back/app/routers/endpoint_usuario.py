@@ -4,7 +4,14 @@ from typing import List, Optional
 
 from app.db.engine import get_db
 from app.modelos.usuarios import Usuario
-from app.esquemas.usuario import UsuarioCreate, UsuarioOut, UsuarioUpdate, PasswordChange, PerfilUpdate
+from app.esquemas.usuario import (
+    UsuarioCreate,
+    UsuarioOut,
+    UsuarioUpdate,
+    PasswordChange,
+    PasswordReset,
+    PerfilUpdate,
+)
 from app.auth.auth import get_password_hash, verify_password, get_current_user
 from app.auth.deps import require_admin, require_profesor_or_admin
 
@@ -130,6 +137,22 @@ def actualizar_usuario(
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
+
+
+@router.patch("/{usuario_id}/password")
+def resetear_password(
+    usuario_id: int,
+    datos: PasswordReset,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_admin),
+):
+    """Solo admin: define una nueva contraseña para cualquier usuario sin conocer la actual."""
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    usuario.password_hash = get_password_hash(datos.new_password)
+    db.commit()
+    return {"detail": f"Contraseña de {usuario.nombre} {usuario.apellido} actualizada"}
 
 
 @router.patch("/{usuario_id}/activar", response_model=UsuarioOut)

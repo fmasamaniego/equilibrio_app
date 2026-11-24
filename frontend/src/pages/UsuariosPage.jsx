@@ -29,6 +29,10 @@ export default function UsuariosPage() {
   const [deleteId, setDeleteId] = useState(null)
   const [editUser, setEditUser] = useState(null)
   const [editForm, setEditForm] = useState({ nombre: '', apellido: '', rol: 'alumno', observaciones: '' })
+  const [pwdUser, setPwdUser] = useState(null)
+  const [pwdForm, setPwdForm] = useState({ nueva: '', confirmar: '' })
+  const [pwdError, setPwdError] = useState('')
+  const [pwdLoading, setPwdLoading] = useState(false)
 
   const fetchUsuarios = async () => {
     setLoading(true)
@@ -108,6 +112,36 @@ export default function UsuariosPage() {
     }
   }
 
+  const openPwd = (u) => {
+    setPwdUser(u)
+    setPwdForm({ nueva: '', confirmar: '' })
+    setPwdError('')
+  }
+
+  const handlePwdSave = async (e) => {
+    e.preventDefault()
+    setPwdError('')
+    if (pwdForm.nueva.length < 6) {
+      setPwdError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+    if (pwdForm.nueva !== pwdForm.confirmar) {
+      setPwdError('Las contraseñas no coinciden')
+      return
+    }
+    setPwdLoading(true)
+    try {
+      await usuarioService.resetearPassword(pwdUser.id, pwdForm.nueva)
+      showToast('Contraseña actualizada')
+      setPwdUser(null)
+      setPwdForm({ nueva: '', confirmar: '' })
+    } catch (err) {
+      setPwdError(err.response?.data?.detail || 'Error actualizando la contraseña')
+    } finally {
+      setPwdLoading(false)
+    }
+  }
+
   const toggleActivo = async (u) => {
     try {
       if (u.activo) await usuarioService.desactivar(u.id)
@@ -161,11 +195,13 @@ export default function UsuariosPage() {
         </select>
       </div>
 
-      {/* Conteo */}
+      {/* Estado de la lista (sin totales) */}
       <p className="text-sm text-gray-400 mb-3">
         {filtered.length === 0
           ? 'Sin resultados'
-          : `Mostrando ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} de ${filtered.length} usuario${filtered.length !== 1 ? 's' : ''}`
+          : totalPages > 1
+            ? `Página ${page} de ${totalPages}`
+            : ' '
         }
       </p>
 
@@ -186,6 +222,7 @@ export default function UsuariosPage() {
             {isAdmin && (
               <div className="flex items-center gap-2">
                 <button onClick={() => openEdit(u)} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Editar</button>
+                <button onClick={() => openPwd(u)} className="text-sm text-gray-600 hover:text-gray-900 font-medium">Clave</button>
                 {u.id !== currentUser.id && (
                   <>
                     <button
@@ -362,6 +399,49 @@ export default function UsuariosPage() {
             />
           </div>
           <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg text-base font-medium hover:bg-indigo-700">Guardar Cambios</button>
+        </form>
+      </Modal>
+
+      {/* Modal cambiar contraseña */}
+      <Modal open={!!pwdUser} onClose={() => setPwdUser(null)} title={`Contraseña de ${pwdUser?.nombre || ''}`}>
+        <form onSubmit={handlePwdSave} className="space-y-3">
+          <p className="text-sm text-gray-400">@{pwdUser?.usuario}</p>
+          <p className="text-sm text-gray-500">
+            Definí una nueva contraseña. El usuario podrá cambiarla después desde Mi Perfil.
+          </p>
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-1">Nueva contraseña</label>
+            <input
+              type="password"
+              value={pwdForm.nueva}
+              onChange={(e) => setPwdForm({ ...pwdForm, nueva: e.target.value })}
+              required
+              autoComplete="new-password"
+              placeholder="Mínimo 6 caracteres"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-1">Repetir contraseña</label>
+            <input
+              type="password"
+              value={pwdForm.confirmar}
+              onChange={(e) => setPwdForm({ ...pwdForm, confirmar: e.target.value })}
+              required
+              autoComplete="new-password"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          {pwdError && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{pwdError}</p>
+          )}
+          <button
+            type="submit"
+            disabled={pwdLoading}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg text-base font-medium hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {pwdLoading ? 'Guardando...' : 'Actualizar contraseña'}
+          </button>
         </form>
       </Modal>
 

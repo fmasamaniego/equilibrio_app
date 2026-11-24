@@ -56,3 +56,11 @@ export async function actualizarMiPerfil(datos) {
   const { data } = await client.patch('/usuarios/me', datos)
   return data
 }
+
+// Solo admin: define una nueva contraseña para otro usuario (sin la actual)
+export async function resetearPassword(id, newPassword) {
+  const { data } = await client.patch(`/usuarios/${id}/password`, {
+    new_password: newPassword,
+  })
+  return data
+}
